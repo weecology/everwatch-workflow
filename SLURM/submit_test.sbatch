@@ -1,3 +1,4 @@
+#test connect in sbatch
 #!/bin/bash
 #SBATCH --job-name=Everglades_rclone   # Job name
 #SBATCH --mail-type=END               # Mail events
@@ -5,15 +6,12 @@
 #SBATCH --account=ewhite
 #SBATCH --nodes=1                 # Number of MPI ranks
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=30GB
+#SBATCH --mem=10GB
 #SBATCH --time=72:00:00       #Time limit hrs:min:sec
 #SBATCH --output=/home/b.weinstein/logs/rclone_%j.out   # Standard output and error log
 #SBATCH --error=/home/b.weinstein/logs/rclone_%j.err
 
-source activate everglades
+#comet debug
 
 #Sync data
-rclone sync everglades:"WadingBird2020Deliverables" /orange/ewhite/everglades/WadingBirds2020/
-
-#Upload
-python /home/b.weinstein/EvergladesWadingBird/Zooniverse/manifest.py
+python tests/test_connect.py
