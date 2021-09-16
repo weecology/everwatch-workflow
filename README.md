@@ -23,6 +23,10 @@ Project Organization
         |-- upload_mapbox.py <- Upload data to mapbox for visualization server
 --------
 
+# Zooniverse Authentication
+
+The tokens.py file needs to be placed (outside of git) in the /Zooniverse folder to authenticate. This file was provided on the everglades slack channel within Weecology organization.
+
 # Download and clean Zooniverse annotations
 
 To download the image crops and corresponding annotations
