@@ -1,7 +1,5 @@
 # EvergladesWadingBird Data
 <!-- badges: start -->
-[![Build Status](https://github.com/weecology/EvergladesTools/workflows/CI/badge.svg)](https://github.com/weecology/EvergladesTools/actions)
-[![License](http://i.creativecommons.org/p/zero/1.0/88x31.png)](https://raw.githubusercontent.com/weecology/PortalData/main/LICENSE)
 <!-- badges: end -->
 
 Project Organization
