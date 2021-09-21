@@ -25,6 +25,7 @@ def load_files(dirname):
         eventdf = geopandas.read_file(x)
         eventdf["Site"] = get_site(x)
         eventdf["Date"] = get_date(x)
+        eventdf["Year"] = get_year(x)
         df.append(eventdf)
     
     df = geopandas.GeoDataFrame(pd.concat(df, ignore_index=True))
@@ -45,6 +46,12 @@ def get_date(x):
     event = "_".join(event)
     
     return event
+
+def get_year(x):
+    "parse filename to return the year of sampling"
+    basename = os.path.basename(x)
+    year = basename.split("_")[3]
+    return year
 
 def compare_site(gdf):
     """Iterate over a dataframe and check rows"""
@@ -76,7 +83,7 @@ def compare_site(gdf):
         claimed_indices.extend(matches.index.values)
         
         #add target info to match
-        matches = matches.append(row)        
+        matches = matches.append(row)    
         matches["target_index"] = index
         matches = matches.rename(columns={"xmin":"matched_xmin","max":"matched_xmax","ymin":"matched_ymin","ymax":"matched_ymax"})
 
@@ -100,12 +107,13 @@ def detect_nests(dirname, savedir):
     
     df = load_files(dirname)
         
-    grouped = df.groupby("Site")
+    grouped = df.groupby(["Site", "Year"])
     results = []
     for name, group in grouped:
         site_results = compare_site(group)
         if site_results is not None:
-            site_results["Site"] = name
+            site_results["Site"] = name[0]
+            site_results["Year"] = name[1]
             results.append(site_results)
         
     result_shp = geopandas.GeoDataFrame(pd.concat(results, ignore_index=True))
