@@ -83,7 +83,7 @@ def compare_site(gdf):
         claimed_indices.extend(matches.index.values)
         
         #add target info to match
-        matches = matches.append(row)    
+        matches = matches.append(row)
         matches["target_index"] = index
         matches = matches.rename(columns={"xmin":"matched_xmin","max":"matched_xmax","ymin":"matched_ymin","ymax":"matched_ymax"})
 
