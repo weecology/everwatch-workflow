@@ -115,3 +115,17 @@ The shapefile contains the predicted nest polygon, site, date and a unique ident
 3  CypressCity  04_29_2020           7
 4  CypressCity  04_01_2020           8
 ```
+
+# Shiny App
+
+## Dependencies
+
+```r
+install.packages(c('shiny', 'shinythemes', 'shinyWidgets', 'leaflet', 'sf'))
+```
+
+## Runn the app
+
+```r
+shiny::runApp('./App/Zooniverse')
+```
