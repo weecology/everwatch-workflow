@@ -79,7 +79,7 @@ def utm_project_raster(path, savedir="/orange/ewhite/everglades/utm_projected/")
 
     return dest_name
 
-def run(tile_path, checkpoint_path, savedir="."):
+def run(tile_path, model, savedir="."):
     """Apply trained model to a drone tile"""
     
     #optionally project
@@ -91,9 +91,6 @@ def run(tile_path, checkpoint_path, savedir="."):
         projected_path = tile_path
         project_boxes = False
 
-    model = main.deepforest.load_from_checkpoint(checkpoint_path)
-    model.label_dict = {"Bird":0}
-    
     #Read bigtiff using rasterio and rollaxis and set to BGR
     try:
         boxes = model.predict_tile(raster_path = projected_path, patch_overlap=0, patch_size=1500)
@@ -119,12 +116,16 @@ def find_files(sites=None):
     """Args:
         sites: a list of sites to filter
     """
-    paths = glob.glob("/orange/ewhite/everglades/2021/**/*.tif",recursive=True)
-    
+    paths = glob.glob("/blue/ewhite/everglades/WadingBirds2020/**/*.tif",recursive=True) +\
+            glob.glob("/blue/ewhite/everglades/2021/**/*.tif",recursive=True)
+
     if sites is not None:
         paths = [x for x in paths if any(w in x for w in sites)]
     paths = [x for x in paths if not "projected" in x]
     paths = [x for x in paths if not "Identified Nests" in x]
+    paths = [x for x in paths if not "Vacation_05_19_2020" in x]
+    paths = [x for x in paths if not "Jerrod_03_03_2021" in x]
+    paths = [x for x in paths if not "Joule_05_05_2021" in x]
     
     return paths
 
@@ -156,14 +157,18 @@ def summarize(paths):
     
 if __name__ == "__main__":
     #client = start(gpus=4,mem_size="30GB")    
-    checkpoint_path = "/orange/ewhite/everglades/Zooniverse/predictions/20210526_132010/bird_detector.pl"    
-    #Start with a known site, sites = None for all data
-    paths = find_files(sites=["Joule"])
+    checkpoint_path = "/orange/ewhite/everglades/Zooniverse/predictions/20210526_132010/bird_detector.pl"
+    model = main.deepforest.load_from_checkpoint(checkpoint_path)
+    model.label_dict = {"Bird":0}
+    # sites = None indicates all data
+    # sites = ['Joule', 'Jerrod'] allows processing subsets of data for testing etc.
+    paths = find_files(sites=None)
     print("Found {} files".format(len(paths)))
     
     completed_predictions = []
-    for path in paths[:2]:
-        result = run(checkpoint_path=checkpoint_path, tile_path=path, savedir="/orange/ewhite/everglades/predictions")
+    for index, path in enumerate(paths):
+        print(f"Processing {path} ({index + 1}/{len(paths)})...")
+        result = run(model = model, tile_path=path, savedir="/blue/ewhite/everglades/predictions")
         completed_predictions.append(result)
     
     #futures = client.map(run, paths[:2], checkpoint_path=checkpoint_path, savedir="/orange/ewhite/everglades/predictions")
