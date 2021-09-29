@@ -6,7 +6,7 @@ sbatch <<EOT
 #SBATCH --account=ewhite
 #SBATCH --nodes=1                 # Number of MPI ran
 #SBATCH --cpus-per-task=8
-#SBATCH --mem=50GB
+#SBATCH --mem=62GB
 #SBATCH --time=48:00:00       #Time limit hrs:min:sec
 #SBATCH --output=/blue/ewhite/everglades/EvergladesTools/Zooniverse/bird_detector_%j.out   # Standard output and error log
 #SBATCH --error=/blue/ewhite/everglades/EvergladesTools/Zooniverse/bird_detector_%j.err
