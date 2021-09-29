@@ -116,7 +116,8 @@ def find_files(sites=None):
     """Args:
         sites: a list of sites to filter
     """
-    paths = glob.glob("/orange/ewhite/everglades/2021/**/*.tif",recursive=True)
+    paths = glob.glob("/blue/ewhite/everglades/WadingBirds2020/**/*.tif",recursive=True) +\
+            glob.glob("/blue/ewhite/everglades/2021/**/*.tif",recursive=True)
     
     if sites is not None:
         paths = [x for x in paths if any(w in x for w in sites)]
@@ -161,7 +162,7 @@ if __name__ == "__main__":
     print("Found {} files".format(len(paths)))
     
     completed_predictions = []
-        result = run(model = model, tile_path=path, savedir="/orange/ewhite/everglades/predictions")
+        result = run(model = model, tile_path=path, savedir="/blue/ewhite/everglades/predictions")
         completed_predictions.append(result)
     
     #futures = client.map(run, paths[:2], checkpoint_path=checkpoint_path, savedir="/orange/ewhite/everglades/predictions")
