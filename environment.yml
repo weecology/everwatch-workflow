@@ -1,24 +1,16 @@
-name: Zooniverse
+name: EvergladesTools
 channels: 
-  - conda-forge
+  - defaults
 dependencies:
-  - geopandas
-  - shapely
-  - pandas
-  - pytest
+  - pytorch::pytorch
+  - pytorch::torchvision
+  - nvidia::cudatoolkit=11.1
   - pip
   - dask
   - distributed
   - pip:
-    - dask_jobqueue
     - DeepForest
-    - panoptescli
-    - mapboxcli
-    - rasterio
-    - deepforest
+    - pytest
     - comet_ml
-    - paramiko
-    - opencv-python
-
-
-
+    - dask
+    - dask_jobqueue
