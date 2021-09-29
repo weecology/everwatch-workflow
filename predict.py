@@ -162,6 +162,8 @@ if __name__ == "__main__":
     print("Found {} files".format(len(paths)))
     
     completed_predictions = []
+    for index, path in enumerate(paths):
+        print(f"Processing {path} ({index + 1}/{len(paths)})...")
         result = run(model = model, tile_path=path, savedir="/blue/ewhite/everglades/predictions")
         completed_predictions.append(result)
     
