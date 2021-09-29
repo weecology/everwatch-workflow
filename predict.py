@@ -160,8 +160,9 @@ if __name__ == "__main__":
     checkpoint_path = "/orange/ewhite/everglades/Zooniverse/predictions/20210526_132010/bird_detector.pl"    
     model = main.deepforest.load_from_checkpoint(checkpoint_path)
     model.label_dict = {"Bird":0}
-    #Start with a known site, sites = None for all data
-    paths = find_files(sites=["Joule"])
+    # sites = None indicates all data
+    # sites = ['Joule', 'Jerrod'] allows processing subsets of data for testing etc.
+    paths = find_files(sites=None)
     print("Found {} files".format(len(paths)))
     
     completed_predictions = []
