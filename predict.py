@@ -131,12 +131,12 @@ def find_files(sites=None):
 
 def get_site(path):
     path = os.path.basename(path)    
-    regex = re.compile("(\\w+)_\\d+_\\d+_\\d+_projected")
+    regex = re.compile("(\\w+)_\\d+_\\d+_\\d+.*_projected")
     return regex.match(path).group(1)
 
 def get_event(path):
     path = os.path.basename(path)
-    regex = re.compile('\\w+_(\\d+_\\d+_\\d+)_projected')
+    regex = re.compile('\\w+_(\\d+_\\d+_\\d+).*_projected')
     return regex.match(path).group(1)
 
 def load_shapefile(x):
@@ -148,7 +148,12 @@ def load_shapefile(x):
     
 def summarize(paths):
     """Take prediction shapefiles and wrap into a single file"""
-    shapefiles = [load_shapefile(x) for x in paths]
+    shapefiles = []
+    for x in paths:
+        try:
+            shapefiles.append(load_shapefile(x))
+        except:
+            print(f"Mistructured file path: {path}. File not added to PredictedBirds.shp")
     summary = geopandas.GeoDataFrame(pd.concat(shapefiles,ignore_index=True),crs=shapefiles[0].crs)
     summary["label"] = "Bird"
     #summary = summary[summary.score > 0.3]
