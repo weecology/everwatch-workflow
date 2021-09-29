@@ -118,7 +118,7 @@ def find_files(sites=None):
     """
     paths = glob.glob("/blue/ewhite/everglades/WadingBirds2020/**/*.tif",recursive=True) +\
             glob.glob("/blue/ewhite/everglades/2021/**/*.tif",recursive=True)
-    
+
     if sites is not None:
         paths = [x for x in paths if any(w in x for w in sites)]
     paths = [x for x in paths if not "projected" in x]
@@ -157,7 +157,7 @@ def summarize(paths):
     
 if __name__ == "__main__":
     #client = start(gpus=4,mem_size="30GB")    
-    checkpoint_path = "/orange/ewhite/everglades/Zooniverse/predictions/20210526_132010/bird_detector.pl"    
+    checkpoint_path = "/orange/ewhite/everglades/Zooniverse/predictions/20210526_132010/bird_detector.pl"
     model = main.deepforest.load_from_checkpoint(checkpoint_path)
     model.label_dict = {"Bird":0}
     # sites = None indicates all data
