@@ -79,7 +79,7 @@ def utm_project_raster(path, savedir="/orange/ewhite/everglades/utm_projected/")
 
     return dest_name
 
-def run(tile_path, checkpoint_path, savedir="."):
+def run(tile_path, model, savedir="."):
     """Apply trained model to a drone tile"""
     
     #optionally project
@@ -91,9 +91,6 @@ def run(tile_path, checkpoint_path, savedir="."):
         projected_path = tile_path
         project_boxes = False
 
-    model = main.deepforest.load_from_checkpoint(checkpoint_path)
-    model.label_dict = {"Bird":0}
-    
     #Read bigtiff using rasterio and rollaxis and set to BGR
     try:
         boxes = model.predict_tile(raster_path = projected_path, patch_overlap=0, patch_size=1500)
@@ -157,13 +154,14 @@ def summarize(paths):
 if __name__ == "__main__":
     #client = start(gpus=4,mem_size="30GB")    
     checkpoint_path = "/orange/ewhite/everglades/Zooniverse/predictions/20210526_132010/bird_detector.pl"    
+    model = main.deepforest.load_from_checkpoint(checkpoint_path)
+    model.label_dict = {"Bird":0}
     #Start with a known site, sites = None for all data
     paths = find_files(sites=["Joule"])
     print("Found {} files".format(len(paths)))
     
     completed_predictions = []
-    for path in paths[:2]:
-        result = run(checkpoint_path=checkpoint_path, tile_path=path, savedir="/orange/ewhite/everglades/predictions")
+        result = run(model = model, tile_path=path, savedir="/orange/ewhite/everglades/predictions")
         completed_predictions.append(result)
     
     #futures = client.map(run, paths[:2], checkpoint_path=checkpoint_path, savedir="/orange/ewhite/everglades/predictions")
