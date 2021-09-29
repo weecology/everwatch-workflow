@@ -123,6 +123,9 @@ def find_files(sites=None):
         paths = [x for x in paths if any(w in x for w in sites)]
     paths = [x for x in paths if not "projected" in x]
     paths = [x for x in paths if not "Identified Nests" in x]
+    paths = [x for x in paths if not "Vacation_05_19_2020" in x]
+    paths = [x for x in paths if not "Jerrod_03_03_2021" in x]
+    paths = [x for x in paths if not "Joule_05_05_2021" in x]
     
     return paths
 
