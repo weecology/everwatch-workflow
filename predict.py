@@ -124,7 +124,8 @@ def find_files(sites=None):
     paths = [x for x in paths if not "projected" in x]
     paths = [x for x in paths if not "Identified Nests" in x]
     bad_sites = ("JetportSouth_04_07_2020.tif", "Vacation_05_19_2020.tif",
-                 "Jerrod_03_03_2021.tif", "Joule_05_05_2021.tif")
+                 "Jerrod_03_03_2021.tif", "Joule_05_05_2021.tif",
+                 "Hidden_03_22_2021.tif", "AlleyNorth_02_23_2021.tif")
     paths = [x for x in paths if not x.endswith(bad_sites)]
     return paths
 
