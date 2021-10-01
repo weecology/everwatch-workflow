@@ -12,6 +12,8 @@ from rasterio.warp import calculate_default_transform, reproject, Resampling
 import re
 import shapely
 from start_cluster import start
+from zipfile import ZipFile
+from zipfile import ZIP_DEFLATED
 
 def project(raster_path, boxes):
     """
@@ -191,5 +193,7 @@ if __name__ == "__main__":
     df = summarize(completed_predictions)
     df.to_file("../App/Zooniverse/data/PredictedBirds.shp")
     
-    
-    
+    # Zip the shapefile for storage efficiency
+    with ZipFile("PredictedBirds.zip", 'w', ZIP_DEFLATED) as zip:
+        for ext in ['cpg', 'dbf', 'prj', 'shp', 'shx']:
+            zip.write(f"PredictedBirds.{ext}")
