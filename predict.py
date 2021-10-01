@@ -194,6 +194,6 @@ if __name__ == "__main__":
     df.to_file("../App/Zooniverse/data/PredictedBirds.shp")
     
     # Zip the shapefile for storage efficiency
-    with ZipFile("PredictedBirds.zip", 'w', ZIP_DEFLATED) as zip:
+    with ZipFile("../App/Zooniverse/data/PredictedBirds.zip", 'w', ZIP_DEFLATED) as zip:
         for ext in ['cpg', 'dbf', 'prj', 'shp', 'shx']:
-            zip.write(f"PredictedBirds.{ext}")
+            zip.write(f"../App/Zooniverse/data/PredictedBirds.{ext}")
