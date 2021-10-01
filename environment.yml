@@ -16,3 +16,5 @@ dependencies:
     - dask_jobqueue
     - rio-mbtiles
     - mapboxcli
+    - panoptes_client
+    - paramiko
