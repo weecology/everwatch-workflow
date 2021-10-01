@@ -196,4 +196,6 @@ if __name__ == "__main__":
     # Zip the shapefile for storage efficiency
     with ZipFile("../App/Zooniverse/data/PredictedBirds.zip", 'w', ZIP_DEFLATED) as zip:
         for ext in ['cpg', 'dbf', 'prj', 'shp', 'shx']:
-            zip.write(f"../App/Zooniverse/data/PredictedBirds.{ext}")
+            focal_file = f"../App/Zooniverse/data/PredictedBirds.{ext}"
+            zip.write(focal_file)
+            os.remove(focal_file)
