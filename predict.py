@@ -12,6 +12,8 @@ from rasterio.warp import calculate_default_transform, reproject, Resampling
 import re
 import shapely
 from start_cluster import start
+from zipfile import ZipFile
+from zipfile import ZIP_DEFLATED
 
 def project(raster_path, boxes):
     """
@@ -124,18 +126,19 @@ def find_files(sites=None):
     paths = [x for x in paths if not "projected" in x]
     paths = [x for x in paths if not "Identified Nests" in x]
     bad_sites = ("JetportSouth_04_07_2020.tif", "Vacation_05_19_2020.tif",
-                 "Jerrod_03_03_2021.tif", "Joule_05_05_2021.tif")
+                 "Jerrod_03_03_2021.tif", "Joule_05_05_2021.tif",
+                 "Hidden_03_22_2021.tif", "AlleyNorth_02_23_2021.tif")
     paths = [x for x in paths if not x.endswith(bad_sites)]
     return paths
 
 def get_site(path):
     path = os.path.basename(path)    
-    regex = re.compile("(\\w+)_\\d+_\\d+_\\d+_projected")
+    regex = re.compile("(\\w+)_\\d+_\\d+_\\d+.*_projected")
     return regex.match(path).group(1)
 
 def get_event(path):
     path = os.path.basename(path)
-    regex = re.compile('\\w+_(\\d+_\\d+_\\d+)_projected')
+    regex = re.compile('\\w+_(\\d+_\\d+_\\d+).*_projected')
     return regex.match(path).group(1)
 
 def load_shapefile(x):
@@ -147,7 +150,12 @@ def load_shapefile(x):
     
 def summarize(paths):
     """Take prediction shapefiles and wrap into a single file"""
-    shapefiles = [load_shapefile(x) for x in paths]
+    shapefiles = []
+    for x in paths:
+        try:
+            shapefiles.append(load_shapefile(x))
+        except:
+            print(f"Mistructured file path: {path}. File not added to PredictedBirds.shp")
     summary = geopandas.GeoDataFrame(pd.concat(shapefiles,ignore_index=True),crs=shapefiles[0].crs)
     summary["label"] = "Bird"
     #summary = summary[summary.score > 0.3]
@@ -185,5 +193,9 @@ if __name__ == "__main__":
     df = summarize(completed_predictions)
     df.to_file("../App/Zooniverse/data/PredictedBirds.shp")
     
-    
-    
+    # Zip the shapefile for storage efficiency
+    with ZipFile("../App/Zooniverse/data/PredictedBirds.zip", 'w', ZIP_DEFLATED) as zip:
+        for ext in ['cpg', 'dbf', 'prj', 'shp', 'shx']:
+            focal_file = f"../App/Zooniverse/data/PredictedBirds.{ext}"
+            zip.write(focal_file)
+            os.remove(focal_file)

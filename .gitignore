@@ -1,2 +1,4 @@
 *tokens.py
 source_token.txt
+Zooniverse/logs/**
+Zooniverse/__pycache__/**

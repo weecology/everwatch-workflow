@@ -14,3 +14,7 @@ dependencies:
     - comet_ml
     - dask
     - dask_jobqueue
+    - rio-mbtiles
+    - mapboxcli
+    - panoptes_client
+    - paramiko
