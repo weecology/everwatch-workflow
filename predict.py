@@ -197,5 +197,6 @@ if __name__ == "__main__":
     with ZipFile("../App/Zooniverse/data/PredictedBirds.zip", 'w', ZIP_DEFLATED) as zip:
         for ext in ['cpg', 'dbf', 'prj', 'shp', 'shx']:
             focal_file = f"../App/Zooniverse/data/PredictedBirds.{ext}"
-            zip.write(focal_file)
+            file_name = os.path.basename(focal_file)
+            zip.write(focal_file, arcname=file_name)
             os.remove(focal_file)
