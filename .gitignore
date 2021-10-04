@@ -2,3 +2,8 @@
 source_token.txt
 Zooniverse/logs/**
 Zooniverse/__pycache__/**
+App/Zooniverse/data/PredictedBirds.cpg
+App/Zooniverse/data/PredictedBirds.dbf
+App/Zooniverse/data/PredictedBirds.prj
+App/Zooniverse/data/PredictedBirds.shp
+App/Zooniverse/data/PredictedBirds.shx
