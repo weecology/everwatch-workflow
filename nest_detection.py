@@ -11,6 +11,9 @@ import cv2
 import numpy as np
 from panoptes_client import Panoptes, Project, SubjectSet, Subject
 import utils
+from zipfile import ZipFile
+from zipfile import ZIP_DEFLATED
+from pathlib import Path
 
 from rasterio.windows import from_bounds
 from PIL import Image, ImageDraw
@@ -121,7 +124,7 @@ def detect_nests(dirname, savedir):
     
     filename = "{}/nest_detections.shp".format(savedir)
     result_shp.to_file(filename)
-        
+
     return filename
 
 def find_rgb_paths(site, paths):
@@ -240,7 +243,14 @@ def find_files():
     return paths
 
 if __name__=="__main__":
-    nest_shp = detect_nests("/orange/ewhite/everglades/predictions/", savedir="../App/Zooniverse/data/")
+    nest_shp = Path(detect_nests("/blue/ewhite/everglades/predictions/", savedir="../App/Zooniverse/data/"))
+    # Zip the shapefile for storage efficiency
+    with ZipFile("../App/Zooniverse/data/nest_detections.zip", 'w', ZIP_DEFLATED) as zip:
+        for ext in ['.cpg', '.dbf', '.prj', '.shp', '.shx']:
+            focal_file = nest_shp.with_suffix(ext)
+            file_name = focal_file.name
+            zip.write(focal_file, arcname=file_name)
+            os.remove(focal_file)
     #Write nests into folders of clips
     rgb_pool = find_files()
     extract_nests(nest_shp, rgb_pool=rgb_pool, savedir="/orange/ewhite/everglades/nest_crops/", upload=False)
