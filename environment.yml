@@ -4,7 +4,7 @@ channels:
 dependencies:
   - pytorch::pytorch
   - pytorch::torchvision
-  - nvidia::cudatoolkit=11.1
+  - nvidia::cudatoolkit=11.3
   - pip
   - dask
   - distributed
