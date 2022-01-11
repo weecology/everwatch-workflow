@@ -6,7 +6,7 @@ sbatch <<EOT
 #SBATCH --account=ewhite
 #SBATCH --nodes=1                 # Number of MPI ranks
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=30GB
+#SBATCH --mem=50GB
 #SBATCH --time=72:00:00       #Time limit hrs:min:sec
 #SBATCH --output=/blue/ewhite/everglades/EvergladesTools/Zooniverse/logs/mapbox_upload.out   # Standard output and error log
 #SBATCH --error=/blue/ewhite/everglades/EvergladesTools/Zooniverse/logs/mapbox_upload.err
