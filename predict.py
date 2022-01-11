@@ -164,9 +164,9 @@ def summarize(paths):
     
 if __name__ == "__main__":
     #client = start(gpus=4,mem_size="30GB")    
-    checkpoint_path = "/orange/ewhite/everglades/Zooniverse/predictions/20210526_132010/bird_detector.pl"
+    checkpoint_path = "/blue/ewhite/everglades/Zooniverse/20211215_073808/species_model.pl"
     model = main.deepforest.load_from_checkpoint(checkpoint_path)
-    model.label_dict = {"Bird":0}
+
     # sites = None indicates all data
     # sites = ['Joule', 'Jerrod'] allows processing subsets of data for testing etc.
     paths = find_files(sites=None)

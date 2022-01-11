@@ -19,8 +19,6 @@ import start_cluster
 def upload(path):
      try:
           dst_crs = rio.crs.CRS.from_epsg("3857")
-          
-          src = rio.open(path)
      
           with rio.open(path) as src:
                transform, width, height = calculate_default_transform(
@@ -51,13 +49,14 @@ def upload(path):
           ##Project to web mercator
           #create output filename
           basename = os.path.splitext(os.path.basename(path))[0]
-          mbtiles_filename = "/orange/ewhite/everglades/mapbox/{}.mbtiles".format(basename)
+          mbtiles_filename = "/blue/ewhite/everglades/mapbox/{}.mbtiles".format(basename)
      
           #if not os.path.exists(mbtiles_filename):
-          subprocess.call("rio mbtiles {} -o {} --zoom-levels 17..24 -j 4 -f PNG --overwrite".format(out_filename, mbtiles_filename), shell=True)
+          subprocess.run(["touch", mbtiles_filename]) #The rio mbtiles command apparently requires that the output file already exist
+          subprocess.run(["rio", "mbtiles", out_filename, "-o", mbtiles_filename, "--zoom-levels", "17..24", "-j", "4", "-f", "PNG", "--overwrite"])
 
           ##Generate tiles
-          subprocess.call("mapbox upload bweinstein.{} {}".format(basename,mbtiles_filename), shell=True)
+          subprocess.run(["mapbox", "upload", f"bweinstein.{basename}", mbtiles_filename])
      
      except Exception as e:
           return "path: {} raised: {}".format(path, e)
@@ -68,13 +67,6 @@ if __name__=="__main__":
      
      files_to_upload = glob.glob("/blue/ewhite/everglades/2021/**/*.tif", recursive=True)
      files_to_upload = [x for x in files_to_upload if "projected" not in x]
- 
-     #files_to_upload = [
-     #"/orange/ewhite/everglades/WadingBirds2020/Joule/Joule_03_10_2020.tif",
-     #"/orange/ewhite/everglades/WadingBirds2020/Joule/Joule_03_24_2020.tif",
-     #"/orange/ewhite/everglades/WadingBirds2020/Joule/Joule_04_21_2020.tif",
-     #"/orange/ewhite/everglades/WadingBirds2020/Joule/Joule_05_05_2020.tif"    
-     #]
      
      for index, path in enumerate(files_to_upload):
           print(f"Uploading file {path} ({index + 1}/{len(files_to_upload)})")
