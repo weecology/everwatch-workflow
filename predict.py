@@ -11,6 +11,7 @@ import rasterio
 from rasterio.warp import calculate_default_transform, reproject, Resampling
 import re
 import shapely
+import torch
 from start_cluster import start
 from zipfile import ZipFile
 from zipfile import ZIP_DEFLATED
@@ -44,7 +45,7 @@ def project(raster_path, boxes):
     
     return boxes
 
-def utm_project_raster(path, savedir="/orange/ewhite/everglades/utm_projected/"):
+def utm_project_raster(path, savedir="/blue/ewhite/everglades/utm_projected/"):
     
     basename = os.path.basename(os.path.splitext(path)[0])
     dest_name = "{}/{}_projected.tif".format(savedir,basename)
@@ -163,9 +164,19 @@ def summarize(paths):
     return summary
     
 if __name__ == "__main__":
-    #client = start(gpus=4,mem_size="30GB")    
-    checkpoint_path = "/blue/ewhite/everglades/Zooniverse/20211215_073808/species_model.pl"
-    model = main.deepforest.load_from_checkpoint(checkpoint_path)
+    #client = start(gpus=4,mem_size="30GB")
+
+    #load the checkpoint
+    checkpoint_path = "/blue/ewhite/everglades/Zooniverse/20211215_112228/species_model.pl"
+    checkpoint = torch.load(checkpoint_path, map_location="cpu") # map_location is necessary for successful load
+    
+    #generate label dict using same code as for fitting
+    train = pd.read_csv("/blue/ewhite/everglades/Zooniverse/parsed_images/species_train.csv")
+    label_dict = {key:value for value, key in enumerate(train.label.unique())}
+
+    #create the model and load the weights for the fitted model
+    model = main.deepforest(num_classes=len(label_dict),label_dict=label_dict)
+    model.load_state_dict(checkpoint["state_dict"])
 
     # sites = None indicates all data
     # sites = ['Joule', 'Jerrod'] allows processing subsets of data for testing etc.
@@ -175,8 +186,11 @@ if __name__ == "__main__":
     completed_predictions = []
     for index, path in enumerate(paths):
         print(f"Processing {path} ({index + 1}/{len(paths)})...")
-        result = run(model = model, tile_path=path, savedir="/blue/ewhite/everglades/predictions")
-        completed_predictions.append(result)
+        try:
+            result = run(model = model, tile_path=path, savedir="/blue/ewhite/everglades/predictions")
+            completed_predictions.append(result)
+        except Exception as e:
+            print("{}".format(e))
     
     #futures = client.map(run, paths[:2], checkpoint_path=checkpoint_path, savedir="/orange/ewhite/everglades/predictions")
     #wait(futures)
