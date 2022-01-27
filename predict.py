@@ -158,7 +158,6 @@ def summarize(paths):
         except:
             print(f"Mistructured file path: {path}. File not added to PredictedBirds.shp")
     summary = geopandas.GeoDataFrame(pd.concat(shapefiles,ignore_index=True),crs=shapefiles[0].crs)
-    summary["label"] = "Bird"
     #summary = summary[summary.score > 0.3]
     
     return summary
