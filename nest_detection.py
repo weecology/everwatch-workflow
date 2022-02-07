@@ -112,7 +112,7 @@ def check_overlap(geom, gdf):
     return matches
     
 def detect_nests(dirname, savedir):
-    """Given a set of shapefiles, track time series of overlaps and save a shapefile of deteced boxes"""
+    """Given a set of shapefiles, track time series of overlaps and save a shapefile of detected boxes"""
     
     df = load_files(dirname)
         
