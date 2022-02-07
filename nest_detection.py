@@ -25,12 +25,18 @@ def load_files(dirname):
     #load all shapefiles to create a dataframe
     df = []
     for x in shapefiles:
+        try:
+        # Catch and skip badly structured file names
+        # TODO: fix file naming issues so we don't need this
+            print(x)
         eventdf = geopandas.read_file(x)
         eventdf["Site"] = get_site(x)
         eventdf["Date"] = get_date(x)
         eventdf["Year"] = get_year(x)
         df.append(eventdf)
-    
+        except IndexError as e:
+            print("Filename issue:")
+            print(e)
     df = geopandas.GeoDataFrame(pd.concat(df, ignore_index=True))
     df.crs = eventdf.crs
     
