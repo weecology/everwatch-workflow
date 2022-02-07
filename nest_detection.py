@@ -29,11 +29,11 @@ def load_files(dirname):
         # Catch and skip badly structured file names
         # TODO: fix file naming issues so we don't need this
             print(x)
-        eventdf = geopandas.read_file(x)
-        eventdf["Site"] = get_site(x)
-        eventdf["Date"] = get_date(x)
-        eventdf["Year"] = get_year(x)
-        df.append(eventdf)
+            eventdf = geopandas.read_file(x)
+            eventdf["Site"] = get_site(x)
+            eventdf["Date"] = get_date(x)
+            eventdf["Year"] = get_year(x)
+            df.append(eventdf)
         except IndexError as e:
             print("Filename issue:")
             print(e)
@@ -81,6 +81,9 @@ def compare_site(gdf):
         #Look up matches
         possible_matches_index = list(spatial_index.intersection(geom.bounds))
         possible_matches = gdf.iloc[possible_matches_index]
+
+        #Remove matches to the current date, which are nearby birds not the same bird on a different date
+        possible_matches = possible_matches.loc[possible_matches['Date'] != row.Date]
         
         #Remove any matches that are claimed by another nest detection
         matches = possible_matches[~(possible_matches.index.isin(claimed_indices))]
@@ -119,11 +122,13 @@ def detect_nests(dirname, savedir):
     grouped = df.groupby(["Site", "Year"])
     results = []
     for name, group in grouped:
+        print(f"Processing {name}")
         site_results = compare_site(group)
         if site_results is not None:
             site_results["Site"] = name[0]
             site_results["Year"] = name[1]
             results.append(site_results)
+        break
         
     result_shp = geopandas.GeoDataFrame(pd.concat(results, ignore_index=True))
     result_shp.crs = df.crs
