@@ -128,7 +128,6 @@ def detect_nests(dirname, savedir):
             site_results["Site"] = name[0]
             site_results["Year"] = name[1]
             results.append(site_results)
-        break
         
     result_shp = geopandas.GeoDataFrame(pd.concat(results, ignore_index=True))
     result_shp.crs = df.crs
