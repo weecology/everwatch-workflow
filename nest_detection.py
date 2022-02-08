@@ -255,6 +255,11 @@ def find_files():
 
 if __name__=="__main__":
     nest_shp = Path(detect_nests("/blue/ewhite/everglades/predictions/", savedir="../App/Zooniverse/data/"))
+
+    #Write nests into folders of clips
+    rgb_pool = find_files()
+    extract_nests(nest_shp, rgb_pool=rgb_pool, savedir="/orange/ewhite/everglades/nest_crops/", upload=False)
+
     # Zip the shapefile for storage efficiency
     with ZipFile("../App/Zooniverse/data/nest_detections.zip", 'w', ZIP_DEFLATED) as zip:
         for ext in ['.cpg', '.dbf', '.prj', '.shp', '.shx']:
@@ -262,6 +267,3 @@ if __name__=="__main__":
             file_name = focal_file.name
             zip.write(focal_file, arcname=file_name)
             os.remove(focal_file)
-    #Write nests into folders of clips
-    rgb_pool = find_files()
-    extract_nests(nest_shp, rgb_pool=rgb_pool, savedir="/orange/ewhite/everglades/nest_crops/", upload=False)
