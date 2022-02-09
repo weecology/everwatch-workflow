@@ -25,12 +25,18 @@ def load_files(dirname):
     #load all shapefiles to create a dataframe
     df = []
     for x in shapefiles:
-        eventdf = geopandas.read_file(x)
-        eventdf["Site"] = get_site(x)
-        eventdf["Date"] = get_date(x)
-        eventdf["Year"] = get_year(x)
-        df.append(eventdf)
-    
+        try:
+        # Catch and skip badly structured file names
+        # TODO: fix file naming issues so we don't need this
+            print(x)
+            eventdf = geopandas.read_file(x)
+            eventdf["Site"] = get_site(x)
+            eventdf["Date"] = get_date(x)
+            eventdf["Year"] = get_year(x)
+            df.append(eventdf)
+        except IndexError as e:
+            print("Filename issue:")
+            print(e)
     df = geopandas.GeoDataFrame(pd.concat(df, ignore_index=True))
     df.crs = eventdf.crs
     
@@ -75,6 +81,9 @@ def compare_site(gdf):
         #Look up matches
         possible_matches_index = list(spatial_index.intersection(geom.bounds))
         possible_matches = gdf.iloc[possible_matches_index]
+
+        #Remove matches to the current date, which are nearby birds not the same bird on a different date
+        possible_matches = possible_matches.loc[possible_matches['Date'] != row.Date]
         
         #Remove any matches that are claimed by another nest detection
         matches = possible_matches[~(possible_matches.index.isin(claimed_indices))]
@@ -106,13 +115,14 @@ def check_overlap(geom, gdf):
     return matches
     
 def detect_nests(dirname, savedir):
-    """Given a set of shapefiles, track time series of overlaps and save a shapefile of deteced boxes"""
+    """Given a set of shapefiles, track time series of overlaps and save a shapefile of detected boxes"""
     
     df = load_files(dirname)
         
     grouped = df.groupby(["Site", "Year"])
     results = []
     for name, group in grouped:
+        print(f"Processing {name}")
         site_results = compare_site(group)
         if site_results is not None:
             site_results["Site"] = name[0]
@@ -244,6 +254,11 @@ def find_files():
 
 if __name__=="__main__":
     nest_shp = Path(detect_nests("/blue/ewhite/everglades/predictions/", savedir="../App/Zooniverse/data/"))
+
+    #Write nests into folders of clips
+    rgb_pool = find_files()
+    extract_nests(nest_shp, rgb_pool=rgb_pool, savedir="/orange/ewhite/everglades/nest_crops/", upload=False)
+
     # Zip the shapefile for storage efficiency
     with ZipFile("../App/Zooniverse/data/nest_detections.zip", 'w', ZIP_DEFLATED) as zip:
         for ext in ['.cpg', '.dbf', '.prj', '.shp', '.shx']:
@@ -251,6 +266,3 @@ if __name__=="__main__":
             file_name = focal_file.name
             zip.write(focal_file, arcname=file_name)
             os.remove(focal_file)
-    #Write nests into folders of clips
-    rgb_pool = find_files()
-    extract_nests(nest_shp, rgb_pool=rgb_pool, savedir="/orange/ewhite/everglades/nest_crops/", upload=False)
