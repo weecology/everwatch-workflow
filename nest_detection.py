@@ -128,7 +128,7 @@ def detect_nests(dirname, savedir):
             site_results["Site"] = name[0]
             site_results["Year"] = name[1]
             results.append(site_results)
-        
+    
     result_shp = geopandas.GeoDataFrame(pd.concat(results, ignore_index=True))
     result_shp.crs = df.crs
     
@@ -136,6 +136,37 @@ def detect_nests(dirname, savedir):
     result_shp.to_file(filename)
 
     return filename
+
+def process_nests(nest_file, savedir):
+    """Process nests into a one row per nest table"""
+    nests_data = geopandas.read_file(nest_file)
+    target_inds = nests_data['target_ind'].unique()
+    nests = []
+    for target_ind in target_inds:
+        nest_data = nests_data[nests_data['target_ind'] == target_ind]
+        summed_scores = nest_data.groupby(['Site', 'Year', 'target_ind', 'label']).score.agg(['sum', 'count'])
+        top_score_data = summed_scores[summed_scores['sum'] == max(summed_scores['sum'])].reset_index()
+        nest_info = nest_data.groupby(['Site', 'Year', 'target_ind']).agg({'Date': ['min', 'max', 'count'], 
+                                                                        'matched_xm': ['mean'],
+                                                                        'matched_ym': ['mean']}).reset_index()
+        nests.append([nest_info['Site'][0],
+                    nest_info['Year'][0],
+                    nest_info['matched_xm']['mean'][0],
+                    nest_info['matched_ym']['mean'][0],
+                    nest_info['Date']['min'][0],
+                    nest_info['Date']['max'][0],
+                    nest_info['Date']['count'][0],
+                    top_score_data['label'][0],
+                    top_score_data['sum'][0],
+                    top_score_data['count'][0]])
+
+    nests = pd.DataFrame(nests, columns=['Site', 'Year', 'matched_xm', 'matched_ym',
+                                'first_obs', 'last_obs', 'num_obs',
+                                'species', 'sum_top1_score', 'num_obs_top1'])
+    nests_shp = geopandas.GeoDataFrame(nests,
+                                       geometry=geopandas.points_from_xy(nests.matched_xm, nests.matched_ym))
+    nests_shp.crs = nests_data.crs
+    nests_shp.to_file(f"{savedir}/nest_detections_processed.shp")
 
 def find_rgb_paths(site, paths):
     paths = [x for x in paths if site in x]
@@ -254,15 +285,23 @@ def find_files():
 
 if __name__=="__main__":
     nest_shp = Path(detect_nests("/blue/ewhite/everglades/predictions/", savedir="../App/Zooniverse/data/"))
+    processed_nests_shp = Path(process_nests(nest_shp, savedir="../App/Zooniverse/data/"))
 
     #Write nests into folders of clips
     rgb_pool = find_files()
     extract_nests(nest_shp, rgb_pool=rgb_pool, savedir="/orange/ewhite/everglades/nest_crops/", upload=False)
 
-    # Zip the shapefile for storage efficiency
+    # Zip the shapefiles for storage efficiency
     with ZipFile("../App/Zooniverse/data/nest_detections.zip", 'w', ZIP_DEFLATED) as zip:
         for ext in ['.cpg', '.dbf', '.prj', '.shp', '.shx']:
             focal_file = nest_shp.with_suffix(ext)
+            file_name = focal_file.name
+            zip.write(focal_file, arcname=file_name)
+            os.remove(focal_file)
+
+    with ZipFile("../App/Zooniverse/data/nest_detections_processed.zip", 'w', ZIP_DEFLATED) as zip:
+        for ext in ['.cpg', '.dbf', '.prj', '.shp', '.shx']:
+            focal_file = processed_nests_shp.with_suffix(ext)
             file_name = focal_file.name
             zip.write(focal_file, arcname=file_name)
             os.remove(focal_file)
