@@ -2,6 +2,7 @@ name: EvergladesTools
 channels: 
   - defaults
 dependencies:
+  - bioconda::snakemake
   - pytorch::pytorch
   - pytorch::torchvision
   - nvidia::cudatoolkit=11.3
