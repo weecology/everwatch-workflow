@@ -150,7 +150,8 @@ def process_nests(nest_file, savedir, min_score=0.4, min_detections=3):
             nest_info = nest_data.groupby(['Site', 'Year', 'target_ind']).agg({'Date': ['min', 'max', 'count'], 
                                                                             'matched_xm': ['mean'],
                                                                             'matched_ym': ['mean']}).reset_index()
-            nests.append([nest_info['Site'][0],
+            nests.append([target_ind,
+                        nest_info['Site'][0],
                         nest_info['Year'][0],
                         nest_info['matched_xm']['mean'][0],
                         nest_info['matched_ym']['mean'][0],
@@ -161,7 +162,7 @@ def process_nests(nest_file, savedir, min_score=0.4, min_detections=3):
                         top_score_data['sum'][0],
                         top_score_data['count'][0]])
 
-    nests = pd.DataFrame(nests, columns=['Site', 'Year', 'matched_xm', 'matched_ym',
+    nests = pd.DataFrame(nests, columns=['nest_id', 'Site', 'Year', 'matched_xm', 'matched_ym',
                                 'first_obs', 'last_obs', 'num_obs',
                                 'species', 'sum_top1_score', 'num_obs_top1'])
     nests_shp = geopandas.GeoDataFrame(nests,
