@@ -137,28 +137,29 @@ def detect_nests(dirname, savedir):
 
     return filename
 
-def process_nests(nest_file, savedir):
+def process_nests(nest_file, savedir, min_score=0.4, min_detections=3):
     """Process nests into a one row per nest table"""
     nests_data = geopandas.read_file(nest_file)
     target_inds = nests_data['target_ind'].unique()
     nests = []
     for target_ind in target_inds:
-        nest_data = nests_data[nests_data['target_ind'] == target_ind]
-        summed_scores = nest_data.groupby(['Site', 'Year', 'target_ind', 'label']).score.agg(['sum', 'count'])
-        top_score_data = summed_scores[summed_scores['sum'] == max(summed_scores['sum'])].reset_index()
-        nest_info = nest_data.groupby(['Site', 'Year', 'target_ind']).agg({'Date': ['min', 'max', 'count'], 
-                                                                        'matched_xm': ['mean'],
-                                                                        'matched_ym': ['mean']}).reset_index()
-        nests.append([nest_info['Site'][0],
-                    nest_info['Year'][0],
-                    nest_info['matched_xm']['mean'][0],
-                    nest_info['matched_ym']['mean'][0],
-                    nest_info['Date']['min'][0],
-                    nest_info['Date']['max'][0],
-                    nest_info['Date']['count'][0],
-                    top_score_data['label'][0],
-                    top_score_data['sum'][0],
-                    top_score_data['count'][0]])
+        nest_data = nests_data[(nests_data['target_ind'] == target_ind) & (nests_data['score'] >= min_score)]
+        if len(nest_data) >= min_detections:
+            summed_scores = nest_data.groupby(['Site', 'Year', 'target_ind', 'label']).score.agg(['sum', 'count'])
+            top_score_data = summed_scores[summed_scores['sum'] == max(summed_scores['sum'])].reset_index()
+            nest_info = nest_data.groupby(['Site', 'Year', 'target_ind']).agg({'Date': ['min', 'max', 'count'], 
+                                                                            'matched_xm': ['mean'],
+                                                                            'matched_ym': ['mean']}).reset_index()
+            nests.append([nest_info['Site'][0],
+                        nest_info['Year'][0],
+                        nest_info['matched_xm']['mean'][0],
+                        nest_info['matched_ym']['mean'][0],
+                        nest_info['Date']['min'][0],
+                        nest_info['Date']['max'][0],
+                        nest_info['Date']['count'][0],
+                        top_score_data['label'][0],
+                        top_score_data['sum'][0],
+                        top_score_data['count'][0]])
 
     nests = pd.DataFrame(nests, columns=['Site', 'Year', 'matched_xm', 'matched_ym',
                                 'first_obs', 'last_obs', 'num_obs',
