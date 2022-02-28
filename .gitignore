@@ -2,6 +2,7 @@
 source_token.txt
 Zooniverse/logs/**
 Zooniverse/__pycache__/**
+Zooniverse/.snakemake/**
 App/Zooniverse/data/PredictedBirds.cpg
 App/Zooniverse/data/PredictedBirds.dbf
 App/Zooniverse/data/PredictedBirds.prj
