@@ -167,7 +167,9 @@ def process_nests(nest_file, savedir, min_score=0.4, min_detections=3):
     nests_shp = geopandas.GeoDataFrame(nests,
                                        geometry=geopandas.points_from_xy(nests.matched_xm, nests.matched_ym))
     nests_shp.crs = nests_data.crs
-    nests_shp.to_file(f"{savedir}/nest_detections_processed.shp")
+    save_path = f"{savedir}/nest_detections_processed.shp"
+    nests_shp.to_file(save_path)
+    return(save_path)
 
 def find_rgb_paths(site, paths):
     paths = [x for x in paths if site in x]
