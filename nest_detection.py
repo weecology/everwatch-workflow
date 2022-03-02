@@ -137,36 +137,44 @@ def detect_nests(dirname, savedir):
 
     return filename
 
-def process_nests(nest_file, savedir):
+def process_nests(nest_file, savedir, min_score=0.4, min_detections=3):
     """Process nests into a one row per nest table"""
     nests_data = geopandas.read_file(nest_file)
     target_inds = nests_data['target_ind'].unique()
     nests = []
     for target_ind in target_inds:
-        nest_data = nests_data[nests_data['target_ind'] == target_ind]
-        summed_scores = nest_data.groupby(['Site', 'Year', 'target_ind', 'label']).score.agg(['sum', 'count'])
-        top_score_data = summed_scores[summed_scores['sum'] == max(summed_scores['sum'])].reset_index()
-        nest_info = nest_data.groupby(['Site', 'Year', 'target_ind']).agg({'Date': ['min', 'max', 'count'], 
-                                                                        'matched_xm': ['mean'],
-                                                                        'matched_ym': ['mean']}).reset_index()
-        nests.append([nest_info['Site'][0],
-                    nest_info['Year'][0],
-                    nest_info['matched_xm']['mean'][0],
-                    nest_info['matched_ym']['mean'][0],
-                    nest_info['Date']['min'][0],
-                    nest_info['Date']['max'][0],
-                    nest_info['Date']['count'][0],
-                    top_score_data['label'][0],
-                    top_score_data['sum'][0],
-                    top_score_data['count'][0]])
+        nest_data = nests_data[(nests_data['target_ind'] == target_ind) & (nests_data['score'] >= min_score)]
+        if len(nest_data) >= min_detections:
+            summed_scores = nest_data.groupby(['Site', 'Year', 'target_ind', 'label']).score.agg(['sum', 'count'])
+            top_score_data = summed_scores[summed_scores['sum'] == max(summed_scores['sum'])].reset_index()
+            nest_info = nest_data.groupby(['Site', 'Year', 'target_ind']).agg({'Date': ['min', 'max', 'count'], 
+                                                                            'matched_xm': ['mean'],
+                                                                            'matched_ym': ['mean'],
+                                                                            'xmax': ['mean'],
+                                                                            'matched__1': ['mean']}).reset_index()
+            xmean = (nest_info['matched_xm']['mean'][0] + nest_info['xmax']['mean']) / 2
+            ymean = (nest_info['matched_ym']['mean'][0] + nest_info['matched__1']['mean']) / 2
+            nests.append([target_ind,
+                        nest_info['Site'][0],
+                        nest_info['Year'][0],
+                        xmean[0],
+                        ymean[0],
+                        nest_info['Date']['min'][0],
+                        nest_info['Date']['max'][0],
+                        nest_info['Date']['count'][0],
+                        top_score_data['label'][0],
+                        top_score_data['sum'][0],
+                        top_score_data['count'][0]])
 
-    nests = pd.DataFrame(nests, columns=['Site', 'Year', 'matched_xm', 'matched_ym',
+    nests = pd.DataFrame(nests, columns=['nest_id', 'Site', 'Year', 'xmean', 'ymean',
                                 'first_obs', 'last_obs', 'num_obs',
                                 'species', 'sum_top1_score', 'num_obs_top1'])
     nests_shp = geopandas.GeoDataFrame(nests,
-                                       geometry=geopandas.points_from_xy(nests.matched_xm, nests.matched_ym))
+                                       geometry=geopandas.points_from_xy(nests.xmean, nests.ymean))
     nests_shp.crs = nests_data.crs
-    nests_shp.to_file(f"{savedir}/nest_detections_processed.shp")
+    save_path = f"{savedir}/nest_detections_processed.shp"
+    nests_shp.to_file(save_path)
+    return(save_path)
 
 def find_rgb_paths(site, paths):
     paths = [x for x in paths if site in x]
