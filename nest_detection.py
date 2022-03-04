@@ -137,7 +137,7 @@ def detect_nests(dirname, savedir):
 
     return filename
 
-def process_nests(nest_file, savedir, min_score=0.4, min_detections=3):
+def process_nests(nest_file, savedir, min_score=0.3, min_detections=3):
     """Process nests into a one row per nest table"""
     nests_data = geopandas.read_file(nest_file)
     target_inds = nests_data['target_ind'].unique()
