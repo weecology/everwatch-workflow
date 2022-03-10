@@ -2,6 +2,7 @@ name: EvergladesTools
 channels: 
   - defaults
 dependencies:
+  - conda-forge::python>=3.9
   - bioconda::snakemake
   - pytorch::pytorch
   - pytorch::torchvision
@@ -13,9 +14,7 @@ dependencies:
     - DeepForest
     - pytest
     - comet_ml
-    - dask
     - dask_jobqueue
     - rio-mbtiles
     - mapboxcli
     - panoptes_client
-    - paramiko
