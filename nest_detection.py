@@ -62,6 +62,14 @@ def get_year(x):
     year = basename.split("_")[3]
     return year
 
+def calculate_IoUs(geom, match):
+    """Calculate intersection-over-union scores for a pair of boxes"""
+    intersection = geom.intersection(match).area
+    union = geom.union(match).area
+    iou = intersection/float(union)
+    
+    return iou
+
 def compare_site(gdf):
     """Iterate over a dataframe and check rows"""
     results = []
@@ -84,7 +92,19 @@ def compare_site(gdf):
 
         #Remove matches to the current date, which are nearby birds not the same bird on a different date
         possible_matches = possible_matches.loc[possible_matches['Date'] != row.Date]
-        
+
+        #Check for multiple matches from the same date and pick best match
+        match_date_count = possible_matches.groupby('Date').Date.agg('count')
+        multiple_match_dates = match_date_count[match_date_count > 1]
+
+        if not multiple_match_dates.empty:
+            for date in multiple_match_dates.index:
+                multiple_matches = possible_matches[possible_matches['Date'] == date]
+                multiple_matches = multiple_matches.assign(iou=multiple_matches['geometry'].map(lambda x: calculate_IoUs(x, geom)))
+                best_match = multiple_matches[multiple_matches["iou"] == max(multiple_matches['iou'])].drop('iou', axis=1)
+                possible_matches = possible_matches.drop(possible_matches[possible_matches['Date'] == date].index)
+                possible_matches = possible_matches.append(best_match)
+
         #Remove any matches that are claimed by another nest detection
         matches = possible_matches[~(possible_matches.index.isin(claimed_indices))]
         
