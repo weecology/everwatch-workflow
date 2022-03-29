@@ -157,14 +157,52 @@ def detect_nests(dirname, savedir):
 
     return filename
 
-def process_nests(nest_file, savedir, min_score=0.3, min_detections=3):
+def count_max_consec_detects(nest_data, date_data):
+    """Determine the maximum number of consecutive bird detections"""
+    assert date_data.shape[0] == 1, "date_data should be a Pandas DataFrame with one row"
+    sorted_dates = pd.Series(date_data.Date[0]).sort_values().reset_index(drop=True)
+    sorted_nest_dates = pd.Series(nest_data.Date).sort_values().reset_index(drop=True)
+    sorted_dates_dict = {val: key for key, val in sorted_dates.items()}
+    sorted_dates_combined_diff = sorted_nest_dates.map(sorted_dates_dict).diff()
+    all_consec_detects = []
+    consec_detects = 0
+    for i in range(1, len(sorted_dates_combined_diff)):
+        if sorted_dates_combined_diff[i] == 1 and sorted_dates_combined_diff[i-1] != 1:
+            # New start to consectutive detection set
+            consec_detects = 1
+            if i + 1 == len(sorted_dates_combined_diff):
+                all_consec_detects.append(consec_detects)
+        elif sorted_dates_combined_diff[i] == 1 and sorted_dates_combined_diff[i-1] == 1:
+            # Increment existing consecutive detection set
+            consec_detects += 1
+            if i + 1 == len(sorted_dates_combined_diff):
+                all_consec_detects.append(consec_detects)
+        elif sorted_dates_combined_diff[i] != 1 and sorted_dates_combined_diff[i-1] == 1:
+            # Store completed consecutive detection set and reset
+            all_consec_detects.append(consec_detects)
+            consec_detects = 0
+        elif sorted_dates_combined_diff[i] != 1 and sorted_dates_combined_diff[i-1] != 1:
+            consec_detects == 0
+        else:
+            assert False, "Oops, I shouldn't be here"
+    if all_consec_detects:
+        max_consec_detects = max(all_consec_detects)
+    else:
+        max_consec_detects = 0
+
+    return max_consec_detects
+
+def process_nests(nest_file, savedir, min_score=0.3, min_detections=3, min_consec_detects = 1):
     """Process nests into a one row per nest table"""
     nests_data = geopandas.read_file(nest_file)
+    dates_data = nests_data.groupby(['Site', 'Year']).agg({'Date': lambda x: x.unique().tolist()}).reset_index()
     target_inds = nests_data['target_ind'].unique()
     nests = []
     for target_ind in target_inds:
         nest_data = nests_data[(nests_data['target_ind'] == target_ind) & (nests_data['score'] >= min_score)]
-        if len(nest_data) >= min_detections:
+        date_data = dates_data[(dates_data['Site'] == nests_data['Site'][0]) & (dates_data['Year'] == nests_data['Year'][0])]
+        num_consec_detects = count_max_consec_detects(nest_data, date_data)
+        if len(nest_data) >= min_detections or num_consec_detects >= min_consec_detects:
             summed_scores = nest_data.groupby(['Site', 'Year', 'target_ind', 'label']).score.agg(['sum', 'count'])
             top_score_data = summed_scores[summed_scores['sum'] == max(summed_scores['sum'])].reset_index()
             nest_info = nest_data.groupby(['Site', 'Year', 'target_ind']).agg({'Date': ['min', 'max', 'count'], 
