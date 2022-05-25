@@ -58,25 +58,33 @@ Conda or mamba (faster)
 ```
 mamba env create -f=environment.yml
 ```
-The environment can be sensitive to the new CUDA version. Its often useful to first install torch and torch vision from -c pytorch and then install the rest of the environment. 
+The environment can be sensitive to the new CUDA version. Its often useful to first install torch and torch vision from -c pytorch and then install the rest of the environment.
 
-0. Sync dropbox to hipergator
+## Syncing Dropbox to HiperGator
 
 ```
 rclone sync everglades2021:"Wading Bird 2021/Deliverables/" /orange/ewhite/everglades/2021
 ```
 
-1. Predict bird locations using trained model using predict.py. If you need to train a new model see the [BirdDetectorRepo](https://github.com/weecology/BirdDetector/blob/main/everglades.py). To create the annotations for the bird detector model run [this](https://github.com/weecology/EvergladesWadingBird/blob/main/Zooniverse/create_bird_detector_annotations.py)
+## Snakemake Workflow
 
-```
-python Zooniverse/predict.py
-```
-This will run the everglades bird detector on all selected files in /orange/ewhite/everglades/2021 and save predicted bird locations to /orange/ewhite/everglades/predictions. A subset of sites can be selected using the find_files() function. An aggregate .shp of all bird detections is written this repo at
+There is a Snakemake workflow that runs most of (soon all of) the steps for predicting birds, predicting nests, and pushing imagery to mapbox.
 
+The run the snakemake workflow from a node with the appropriate resources run:
+
+```bash
+snakemake --printshellcmds --keep-going -jobs 10 --resources gpu=2
 ```
-App/Zooniverse/data/PredictedBirds.shp
-```
-The output shapefile contains the predicted polygon, confidence score, site and event date.
+
+Replace `10` with the number of cores to run on and `2` with the number of gpus available.
+
+The workflow currently does the following:
+1. Projects all orthomosaics in `/blue/ewhite/everglades/orthomosaics` using `project_orthos.py`
+2. Predicts the location and species ID of all birds in each orthomosaic using `predict.py`
+3. Combines all of the predictions into a single shape file using `combine_bird_predictions.py`
+
+The output shapefiles from (2) and (3) contain the predicted polygon, confidence score, site and event date.
+
 ```
 >>> import geopandas as gpd
 >>> gdf[["score","site","event"]]
@@ -88,7 +96,14 @@ The output shapefile contains the predicted polygon, confidence score, site and 
 14034  0.237832  Yonteau  04_27_2020
 ```
 
-2. Predict nest-locations using bird-bird-bird 
+We are currently adding the following to the workflow:
+1. Predicting the location of nests in each orthomosaic
+2. Combining all of the nest predictions into a single shape file
+3. Projecting orthomosaics into the mapbox projection
+4. Creating mbtiles files for mapbox
+5. Pushing those mbtiles files to mapbox
+
+The existing code for steps (1) and (2) follow the following steps:
 
 ```
 python Zooniverse/nest_detection.py
@@ -115,6 +130,8 @@ The shapefile contains the predicted nest polygon, site, date and a unique ident
 3  CypressCity  04_29_2020           7
 4  CypressCity  04_01_2020           8
 ```
+
+The existing code steps (3) - (5) is in `upload_mapbox.py`
 
 # Shiny App
 
