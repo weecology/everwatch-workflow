@@ -53,7 +53,7 @@ def upload(path):
      
           #if not os.path.exists(mbtiles_filename):
           subprocess.run(["touch", mbtiles_filename]) #The rio mbtiles command apparently requires that the output file already exist
-          subprocess.run(["rio", "mbtiles", out_filename, "-o", mbtiles_filename, "--zoom-levels", "17..24", "-j", "4", "-f", "PNG", "--overwrite"])
+          subprocess.run(["rio", "mbtiles", out_filename, "-o", mbtiles_filename, "--zoom-levels", "17..24", "-j", "4", "-f", "PNG"])
 
           ##Generate tiles
           subprocess.run(["mapbox", "upload", f"bweinstein.{basename}", mbtiles_filename])
@@ -65,7 +65,7 @@ def upload(path):
 
 if __name__=="__main__":
      
-     files_to_upload = glob.glob("/blue/ewhite/everglades/2021/**/*.tif", recursive=True)
+     files_to_upload = glob.glob("/blue/ewhite/everglades/orthomosaics/2022/**/*.tif", recursive=True)
      files_to_upload = [x for x in files_to_upload if "projected" not in x]
      
      for index, path in enumerate(files_to_upload):
