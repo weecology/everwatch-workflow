@@ -10,7 +10,7 @@
 #SBATCH --output=/home/b.weinstein/logs/mapbox_upload.out   # Standard output and error log
 #SBATCH --error=/home/b.weinstein/logs/mapbox_upload.err
 
-source activate Zooniverse
+conda activate DeepTreeAttention
 
-cd /home/b.weinstein/EvergladesWadingBird/Zooniverse
+cd /home/b.weinstein/EvergladesTools/Zooniverse
 python upload_mapbox.py
