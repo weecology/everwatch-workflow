@@ -64,7 +64,7 @@ def run(proj_tile_path, checkpoint_path, savedir="."):
     
 if __name__ == "__main__":
 
-    checkpoint_path = "/blue/ewhite/everglades/Zooniverse/20211215_112228/species_model.pl"
+    checkpoint_path = "/blue/ewhite/everglades/Zooniverse//20220910_182547/species_model.pl"
 
     path = sys.argv[1]
     split_path = os.path.normpath(path).split(os.path.sep)
