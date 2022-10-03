@@ -20,7 +20,7 @@ from PIL import Image, ImageDraw
 
 def load_files(dirname):
     """Load shapefiles and concat into large frame"""
-    shapefiles = glob.glob(dirname + "*.shp")
+    shapefiles = glob.glob(dirname + "**/**/*.shp")
     
     #load all shapefiles to create a dataframe
     df = []
