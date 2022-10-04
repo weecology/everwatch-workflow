@@ -1,14 +1,15 @@
 import os
-import rasterio
-from rasterio.warp import calculate_default_transform, reproject, Resampling
 import sys
 
-def utm_project_raster(path, year, site, savedir="/blue/ewhite/everglades/projected_mosaics/"):
-    
-    basename = os.path.basename(os.path.splitext(path)[0])
-    dest_name = os.path.join(savedir, year, site, basename +"_projected.tif")
+import rasterio
+from rasterio.warp import calculate_default_transform, reproject, Resampling
 
-    #Everglades UTM Zone
+
+def utm_project_raster(path, year, site, savedir="/blue/ewhite/everglades/projected_mosaics/"):
+    basename = os.path.basename(os.path.splitext(path)[0])
+    dest_name = os.path.join(savedir, year, site, basename + "_projected.tif")
+
+    # Everglades UTM Zone
     dst_crs = 32617
 
     with rasterio.open(path) as src:
@@ -34,6 +35,7 @@ def utm_project_raster(path, year, site, savedir="/blue/ewhite/everglades/projec
                     resampling=Resampling.nearest)
 
     return dest_name
+
 
 if __name__ == "__main__":
     path = sys.argv[1]
