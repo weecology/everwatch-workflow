@@ -1,7 +1,4 @@
 *tokens.py
-source_token.txt
-Zooniverse/logs/**
-Zooniverse/.snakemake/**
 App/Zooniverse/data/PredictedBirds.cpg
 App/Zooniverse/data/PredictedBirds.dbf
 App/Zooniverse/data/PredictedBirds.prj
@@ -17,13 +14,17 @@ App/Zooniverse/data/nest_detections_processed.dbf
 App/Zooniverse/data/nest_detections_processed.prj
 App/Zooniverse/data/nest_detections_processed.shp
 App/Zooniverse/data/nest_detections_processed.shx
-.Rhistory
-.vscode/launch.json
+Zooniverse/.snakemake/**
+Zooniverse/logs/**
+source_token.txt
 
 # Config files
 *.DS_Store*
 *.idea*
 *.pytest_cache*
 *__pycache__*
+*_cache*
+.Rhistory
+.vscode/launch.json
 App/.R*
 App/App.Rproj
