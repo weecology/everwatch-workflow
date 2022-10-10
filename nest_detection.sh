@@ -1,7 +1,7 @@
 sbatch <<EOT
 #!/bin/bash
 #SBATCH --job-name=NestDetect   # Job name
-#SBATCH --mail-type=END               # Mail events
+#SBATCH --mail-type=END,FAIL            # Mail events
 #SBATCH --mail-user=ethanwhite@ufl.edu  # Where to send mail
 #SBATCH --account=ewhite
 #SBATCH --nodes=1                 # Number of MPI ran

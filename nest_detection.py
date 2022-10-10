@@ -149,7 +149,7 @@ def detect_nests(dirname, savedir):
     """Given a set of shapefiles, track time series of overlaps and save a shapefile of detected boxes"""
 
     df = load_files(dirname)
-
+    df = df.assign(bird_id = range(len(df)))
     grouped = df.groupby(["Site", "Year"])
     results = []
     for name, group in grouped:
@@ -226,6 +226,7 @@ def process_nests(nest_file, savedir, min_score=0.3, min_detections=3, min_conse
                                                                                'matched__1': ['mean']}).reset_index()
             xmean = (nest_info['matched_xm']['mean'][0] + nest_info['xmax']['mean']) / 2
             ymean = (nest_info['matched_ym']['mean'][0] + nest_info['matched__1']['mean']) / 2
+            bird_match = ",".join([str(x) for x in nest_data["bird_id"]])
             nests.append([target_ind,
                           nest_info['Site'][0],
                           nest_info['Year'][0],
@@ -236,11 +237,12 @@ def process_nests(nest_file, savedir, min_score=0.3, min_detections=3, min_conse
                           nest_info['Date']['count'][0],
                           top_score_data['label'][0],
                           top_score_data['sum'][0],
-                          top_score_data['count'][0]])
+                          top_score_data['count'][0],
+                          bird_match])
 
     nests = pd.DataFrame(nests, columns=['nest_id', 'Site', 'Year', 'xmean', 'ymean',
                                          'first_obs', 'last_obs', 'num_obs',
-                                         'species', 'sum_top1_score', 'num_obs_top1'])
+                                         'species', 'sum_top1_score', 'num_obs_top1', 'bird_match'])
     nests_shp = geopandas.GeoDataFrame(nests,
                                        geometry=geopandas.points_from_xy(nests.xmean, nests.ymean))
     nests_shp.crs = nests_data.crs
