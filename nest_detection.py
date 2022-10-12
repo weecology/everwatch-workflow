@@ -2,19 +2,10 @@
 # Given a set of predictions in /orange/ewhite/everglades/predictions/, generate predicted nests
 import glob
 import os
-import random
 from pathlib import Path
-from zipfile import ZIP_DEFLATED
-from zipfile import ZipFile
-
-import cv2
 import geopandas
-import numpy as np
 import pandas as pd
-import rasterio
-from PIL import Image, ImageDraw
-from panoptes_client import SubjectSet, Subject
-from rasterio.windows import from_bounds
+import sys
 
 def load_files(dirname, year, site):
     """Load shapefiles and concat into large frame"""
