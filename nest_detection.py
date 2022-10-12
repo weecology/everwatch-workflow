@@ -269,9 +269,3 @@ if __name__ == "__main__":
     savedir = os.path.join("/blue/ewhite/everglades/detected_nests/", year, site)
     detect_nests(path, year, site, savedir=savedir)
 
-    with ZipFile("../App/Zooniverse/data/nest_detections_processed.zip", 'w', ZIP_DEFLATED) as zip:
-        for ext in ['.cpg', '.dbf', '.prj', '.shp', '.shx']:
-            focal_file = processed_nests_shp.with_suffix(ext)
-            file_name = focal_file.name
-            zip.write(focal_file, arcname=file_name)
-            os.remove(focal_file)
