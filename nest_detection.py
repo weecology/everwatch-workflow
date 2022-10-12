@@ -16,12 +16,9 @@ from PIL import Image, ImageDraw
 from panoptes_client import SubjectSet, Subject
 from rasterio.windows import from_bounds
 
-import utils
-
-
-def load_files(dirname):
+def load_files(dirname, year, site):
     """Load shapefiles and concat into large frame"""
-    shapefiles = glob.glob(dirname + "**/**/*.shp")
+    shapefiles = glob.glob(dirname + "*.shp")
 
     # load all shapefiles to create a dataframe
     df = []
@@ -31,9 +28,9 @@ def load_files(dirname):
             # TODO: fix file naming issues so we don't need this
             print(x)
             eventdf = geopandas.read_file(x)
-            eventdf["Site"] = get_site(x)
+            eventdf["Site"] = site
             eventdf["Date"] = get_date(x)
-            eventdf["Year"] = get_year(x)
+            eventdf["Year"] = year
             df.append(eventdf)
         except IndexError as e:
             print("Filename issue:")
@@ -43,14 +40,6 @@ def load_files(dirname):
 
     return df
 
-
-def get_site(x):
-    """parse filename to return site name"""
-    basename = os.path.basename(x)
-    site = basename.split("_")[0]
-    return site
-
-
 def get_date(x):
     """parse filename to return event name"""
     basename = os.path.basename(x)
@@ -58,14 +47,6 @@ def get_date(x):
     event = "_".join(event)
 
     return event
-
-
-def get_year(x):
-    "parse filename to return the year of sampling"
-    basename = os.path.basename(x)
-    year = basename.split("_")[3]
-    return year
-
 
 def calculate_IoUs(geom, match):
     """Calculate intersection-over-union scores for a pair of boxes"""
@@ -137,33 +118,21 @@ def compare_site(gdf):
 
     return results
 
-
-def check_overlap(geom, gdf):
-    """Find spatially overlapping rows between target and pool of geometries"""
-    matches = gdf.intersects(geom)
-
-    return matches
-
-
-def detect_nests(dirname, savedir):
+def detect_nests(dirname, year, site, savedir):
     """Given a set of shapefiles, track time series of overlaps and save a shapefile of detected boxes"""
 
-    df = load_files(dirname)
+    df = load_files(dirname, year, site)
     df = df.assign(bird_id = range(len(df)))
-    grouped = df.groupby(["Site", "Year"])
-    results = []
-    for name, group in grouped:
-        print(f"Processing {name}")
-        site_results = compare_site(group)
-        if site_results is not None:
-            site_results["Site"] = name[0]
-            site_results["Year"] = name[1]
-            results.append(site_results)
+    results = compare_site(df)
+    results["Site"] = site
+    results["Year"] = year
 
-    result_shp = geopandas.GeoDataFrame(pd.concat(results, ignore_index=True))
+    result_shp = geopandas.GeoDataFrame(results)
     result_shp.crs = df.crs
 
-    filename = "{}/nest_detections.shp".format(savedir)
+    if not os.path.exists(savedir):
+        os.makedirs(savedir)
+    filename = os.path.join(savedir, f"{site}_{year}_detected_nests.shp")
     result_shp.to_file(filename)
 
     return filename
@@ -375,20 +344,12 @@ def find_files():
 
 
 if __name__ == "__main__":
-    nest_shp = Path(detect_nests("/blue/ewhite/everglades/predictions/", savedir="../App/Zooniverse/data/"))
-    processed_nests_shp = Path(process_nests(nest_shp, savedir="../App/Zooniverse/data/"))
-
-    # Write nests into folders of clips
-    rgb_pool = find_files()
-    extract_nests(nest_shp, rgb_pool=rgb_pool, savedir="/orange/ewhite/everglades/nest_crops/", upload=False)
-
-    # Zip the shapefiles for storage efficiency
-    with ZipFile("../App/Zooniverse/data/nest_detections.zip", 'w', ZIP_DEFLATED) as zip:
-        for ext in ['.cpg', '.dbf', '.prj', '.shp', '.shx']:
-            focal_file = nest_shp.with_suffix(ext)
-            file_name = focal_file.name
-            zip.write(focal_file, arcname=file_name)
-            os.remove(focal_file)
+    path = sys.argv[1]
+    split_path = os.path.normpath(path).split(os.path.sep)
+    year = split_path[5]
+    site = split_path[6]
+    savedir = os.path.join("/blue/ewhite/everglades/detected_nests/", year, site)
+    detect_nests(path, year, site, savedir=savedir)
 
     with ZipFile("../App/Zooniverse/data/nest_detections_processed.zip", 'w', ZIP_DEFLATED) as zip:
         for ext in ['.cpg', '.dbf', '.prj', '.shp', '.shx']:
