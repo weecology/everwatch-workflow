@@ -1,20 +1,11 @@
-import os
 import glob
+import os
 import subprocess
-import numpy as np
+
 import rasterio as rio
 from rasterio.warp import calculate_default_transform, reproject, Resampling
-import start_cluster
 
-#subprocess.call("/orange/ewhite/everglades/mapbox/source_token.txt", shell =True)
-
-#Files to upload to mapbox
-#files_to_upload = ['/orange/ewhite/everglades/WadingBirds2020/CypressCity/CypressCity_03_25_2020.tif',
-#'/orange/ewhite/everglades/WadingBirds2020/Jerrod/Jerrod_03_24_2020.tif',
-#'/orange/ewhite/everglades/WadingBirds2020/Jetport/JetportSouth_03_23_2020.tif',
-#'/orange/ewhite/everglades/WadingBirds2020/Joule/Joule_03_24_2020.tif',
-#'/orange/ewhite/everglades/WadingBirds2020/StartMel/StartMel_03_24_2020.tif',
-#"/orange/ewhite/everglades/WadingBirds2020/Vacation/Vacation_03_24_2020.tif"]
+subprocess.call("/orange/ewhite/everglades/mapbox/source_token.txt", shell =True)
 
 def upload(path):
      try:
