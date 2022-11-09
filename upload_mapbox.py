@@ -18,6 +18,12 @@ import start_cluster
 
 def upload(path):
      try:
+          #create output filename
+          basename = os.path.splitext(os.path.basename(path))[0]
+          mbtiles_filename = "/blue/ewhite/everglades/mapbox/{}.mbtiles".format(basename)
+          if os.path.exists(mbtiles_filename):
+               continue
+          
           dst_crs = rio.crs.CRS.from_epsg("3857")
      
           with rio.open(path) as src:
@@ -47,11 +53,6 @@ def upload(path):
                                resampling=Resampling.nearest)
      
           ##Project to web mercator
-          #create output filename
-          basename = os.path.splitext(os.path.basename(path))[0]
-          mbtiles_filename = "/blue/ewhite/everglades/mapbox/{}.mbtiles".format(basename)
-     
-          #if not os.path.exists(mbtiles_filename):
           subprocess.run(["touch", mbtiles_filename]) #The rio mbtiles command apparently requires that the output file already exist
           subprocess.run(["rio", "mbtiles", out_filename, "-o", mbtiles_filename, "--zoom-levels", "17..24", "-j", "4", "-f", "PNG"])
 
