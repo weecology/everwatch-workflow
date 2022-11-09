@@ -13,7 +13,7 @@ def upload(path):
           basename = os.path.splitext(os.path.basename(path))[0]
           mbtiles_filename = "/blue/ewhite/everglades/mapbox/{}.mbtiles".format(basename)
           if os.path.exists(mbtiles_filename):
-               continue
+               return mbtiles_filename
           
           dst_crs = rio.crs.CRS.from_epsg("3857")
      
