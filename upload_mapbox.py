@@ -5,8 +5,6 @@ import subprocess
 import rasterio as rio
 from rasterio.warp import calculate_default_transform, reproject, Resampling
 
-subprocess.call("/orange/ewhite/everglades/mapbox/source_token.txt", shell =True)
-
 def upload(path):
      try:
           #create output filename
