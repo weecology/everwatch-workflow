@@ -8,15 +8,16 @@ from rasterio.warp import calculate_default_transform, reproject, Resampling
 
 def upload(path, year, site):
      try:
-          #create output filename
+        # Create output filename
           basename = os.path.splitext(os.path.basename(path))[0]
           mbtiles_filename = "/blue/ewhite/everglades/mapbox/{}.mbtiles".format(basename)
           if os.path.exists(mbtiles_filename):
                return mbtiles_filename
           
+        # Project to web mercator
           dst_crs = rio.crs.CRS.from_epsg("3857")
-     
           with rio.open(path) as src:
+            print("Transforming file into web mercator")
                transform, width, height = calculate_default_transform(
                     src.crs, dst_crs, src.width, src.height, *src.bounds)
                kwargs = src.meta.copy()
@@ -27,7 +28,6 @@ def upload(path, year, site):
                     'height': height
                })
      
-               #create output filename
             flight = os.path.splitext(os.path.split(path)[1])[0]
             out_filename = f"/blue/ewhite/everglades/projected_mosaics/webmercator/{year}/{site}/{flight}_projected.tif"
                if not os.path.exists(out_filename):
@@ -42,9 +42,13 @@ def upload(path, year, site):
                                dst_crs=dst_crs,
                                resampling=Resampling.nearest)
      
+        # Generate tiles
+        print("Creating mbtiles file")
         #subprocess.run(["touch", mbtiles_filename]) #The rio mbtiles command apparently requires that the output file already exist
+        subprocess.run(["rio", "mbtiles", out_filename, "-o", mbtiles_filename, "--zoom-levels", "17..24", "-j", "4", "-f", "PNG", "--progress-bar"])
 
-          ##Generate tiles
+        # Upload to mapbox
+        print("Uploading to mapbox")
           subprocess.run(["mapbox", "upload", f"bweinstein.{basename}", mbtiles_filename])
      
      except Exception as e:
