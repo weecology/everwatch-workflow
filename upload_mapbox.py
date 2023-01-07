@@ -1,11 +1,12 @@
 import glob
 import os
+import sys
 import subprocess
 
 import rasterio as rio
 from rasterio.warp import calculate_default_transform, reproject, Resampling
 
-def upload(path):
+def upload(path, year, site):
      try:
           #create output filename
           basename = os.path.splitext(os.path.basename(path))[0]
@@ -27,8 +28,8 @@ def upload(path):
                })
      
                #create output filename
-               out_filename = "{}_projected.tif".format(os.path.splitext(path)[0])
-     
+            flight = os.path.splitext(os.path.split(path)[1])[0]
+            out_filename = f"/blue/ewhite/everglades/projected_mosaics/webmercator/{year}/{site}/{flight}_projected.tif"
                if not os.path.exists(out_filename):
                     with rio.open(out_filename, 'w', **kwargs) as dst:
                          for i in range(1, src.count + 1):
@@ -60,7 +61,10 @@ if __name__=="__main__":
      
      for index, path in enumerate(files_to_upload):
           print(f"Uploading file {path} ({index + 1}/{len(files_to_upload)})")
-          upload(path)
+        split_path = os.path.normpath(path).split(os.path.sep)
+        year = split_path[5]
+        site = split_path[6]
+        upload(path, year, site)
           
      #client = start_cluster.start(cpus=20, mem_size="20GB")
      #futures = client.map(upload,files_to_upload)
