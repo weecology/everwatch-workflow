@@ -31,6 +31,8 @@ def upload(path, year, site):
             flight = os.path.splitext(os.path.split(path)[1])[0]
             out_filename = f"/blue/ewhite/everglades/projected_mosaics/webmercator/{year}/{site}/{flight}_projected.tif"
             if not os.path.exists(out_filename):
+                if not os.path.exists(f"/blue/ewhite/everglades/projected_mosaics/webmercator/{year}/{site}/"):
+                    os.mkdir(f"/blue/ewhite/everglades/projected_mosaics/webmercator/{year}/{site}/")
                 with rio.open(out_filename, 'w', **kwargs) as dst:
                     for i in range(1, src.count + 1):
                         reproject(
