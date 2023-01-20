@@ -7,13 +7,11 @@ import geopandas
 import pandas as pd
 import sys
 
-def load_files(dirname, year, site):
+def load_files(bird_detection_files, year, site):
     """Load shapefiles and concat into large frame"""
-    shapefiles = glob.glob(dirname + "*.shp")
-
     # load all shapefiles to create a dataframe
     df = []
-    for x in shapefiles:
+    for x in bird_detection_files:
         try:
             # Catch and skip badly structured file names
             # TODO: fix file naming issues so we don't need this
@@ -109,10 +107,10 @@ def compare_site(gdf):
 
     return results
 
-def detect_nests(dirname, year, site, savedir):
+def detect_nests(bird_detection_files, year, site, savedir):
     """Given a set of shapefiles, track time series of overlaps and save a shapefile of detected boxes"""
 
-    df = load_files(dirname, year, site)
+    df = load_files(bird_detection_files, year, site)
     df = df.assign(bird_id = range(len(df)))
     results = compare_site(df)
     results["Site"] = site
@@ -253,10 +251,10 @@ def find_files():
 
 
 if __name__ == "__main__":
-    path = sys.argv[1]
-    split_path = os.path.normpath(path).split(os.path.sep)
+    paths = sys.argv[1:]
+    split_path = os.path.normpath(paths[0]).split(os.path.sep)
     year = split_path[5]
     site = split_path[6]
     savedir = os.path.join("/blue/ewhite/everglades/detected_nests/", year, site)
-    detect_nests(path, year, site, savedir=savedir)
+    detect_nests(paths, year, site, savedir=savedir)
 
