@@ -9,6 +9,7 @@ YEARS = ORTHOMOSAICS.year
 rule all:
     input:
         "/blue/ewhite/everglades/EvergladesTools/App/Zooniverse/data/PredictedBirds.zip",
+        "/blue/ewhite/everglades/EvergladesTools/App/Zooniverse/data/nest_detections_processed.zip",
         expand("/blue/ewhite/everglades/predictions/{year}/{site}/{flight}_projected.shp",
                zip, site=SITES, year=YEARS, flight=FLIGHTS),
         expand("/blue/ewhite/everglades/processed_nests/{year}/{site}/{site}_{year}_processed_nests.shp",
@@ -66,3 +67,12 @@ rule process_nests:
         "/blue/ewhite/everglades/processed_nests/{year}/{site}/{site}_{year}_processed_nests.shp"
     shell:
         "python process_nests.py {input}"
+
+rule combine_nests:
+    input:
+        expand("/blue/ewhite/everglades/processed_nests/{year}/{site}/{site}_{year}_processed_nests.shp",
+               zip, site=SITES, year=YEARS)
+    output:
+        "/blue/ewhite/everglades/EvergladesTools/App/Zooniverse/data/nest_detections_processed.zip"
+    shell:
+        "python combine_nests.py"
