@@ -72,17 +72,36 @@ def process_nests(nest_file, year, site, savedir, min_score=0.3, min_detections=
                           top_score_data['count'][0],
                           bird_match])
 
-    nests = pd.DataFrame(nests, columns=['nest_id', 'Site', 'Year', 'xmean', 'ymean',
-                                         'first_obs', 'last_obs', 'num_obs',
-                                         'species', 'sum_top1_score', 'num_obs_top1', 'bird_match'])
-    nests_shp = geopandas.GeoDataFrame(nests,
-                                       geometry=geopandas.points_from_xy(nests.xmean, nests.ymean))
-    nests_shp.crs = nests_data.crs
-    
     if not os.path.exists(savedir):
         os.makedirs(savedir)
     filename = os.path.join(savedir, f"{site}_{year}_processed_nests.shp")
-    nests_shp.to_file(filename)
+
+    if nests:
+        nests = pd.DataFrame(nests, columns=['nest_id', 'Site', 'Year', 'xmean', 'ymean',
+                                            'first_obs', 'last_obs', 'num_obs',
+                                            'species', 'sum_top1_score', 'num_obs_top1', 'bird_match'])
+        nests_shp = geopandas.GeoDataFrame(nests,
+                                        geometry=geopandas.points_from_xy(nests.xmean, nests.ymean))
+        nests_shp.crs = nests_data.crs
+        nests_shp.to_file(filename)
+    else:
+        schema = {"geometry": "Polygon",
+                  "properties": {'nest_id': 'int',
+                                 'Site': 'str',
+                                 'Year': 'str',
+                                 'xmean': 'float',
+                                 'ymean': 'float',
+                                 'first_obs': 'str',
+                                 'last_obs': 'str',
+                                 'num_obs': 'int',
+                                 'species': 'str',
+                                 'sum_top1_score': 'float',
+                                 'num_obs_top1': 'int',
+                                 'bird_match': 'str'
+                                }}
+        crs = nests_data.crs
+        empty_nests = geopandas.GeoDataFrame(geometry=[])
+        empty_nests.to_file(filename, driver='ESRI Shapefile', schema=schema, crs=crs)
 
 if __name__ == "__main__":
     path = sys.argv[1]

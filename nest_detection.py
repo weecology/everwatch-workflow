@@ -15,7 +15,6 @@ def load_files(bird_detection_files, year, site):
         try:
             # Catch and skip badly structured file names
             # TODO: fix file naming issues so we don't need this
-            print(x)
             eventdf = geopandas.read_file(x)
             eventdf["Site"] = site
             eventdf["Date"] = get_date(x)
@@ -100,30 +99,49 @@ def compare_site(gdf):
 
         results.append(matches)
 
-    if len(results) == 0:
-        return None
-
-    results = pd.concat(results)
+    if results:
+        results = pd.concat(results)
+    else:
+        results = pd.DataFrame(columns = ['matched_xm', 'matched_ym', 'xmax', 'matched__1', 'label', 'score',
+       'Date', 'bird_id', 'target_index', 'geometry'])
 
     return results
 
 def detect_nests(bird_detection_files, year, site, savedir):
     """Given a set of shapefiles, track time series of overlaps and save a shapefile of detected boxes"""
 
-    df = load_files(bird_detection_files, year, site)
-    df = df.assign(bird_id = range(len(df)))
-    results = compare_site(df)
-    results["Site"] = site
-    results["Year"] = year
-
-    result_shp = geopandas.GeoDataFrame(results)
-    result_shp.crs = df.crs
-
     if not os.path.exists(savedir):
         os.makedirs(savedir)
     filename = os.path.join(savedir, f"{site}_{year}_detected_nests.shp")
-    result_shp.to_file(filename)
 
+    df = load_files(bird_detection_files, year, site)
+    df = df.assign(bird_id = range(len(df)))
+    results = compare_site(df)
+
+    if not results.empty:
+        results["Site"] = site
+        results["Year"] = year
+        result_shp = geopandas.GeoDataFrame(results)
+        result_shp.crs = df.crs
+        result_shp.to_file(filename)
+    else:
+        schema = {"geometry": "Polygon",
+                "properties": {'matched_xm': 'float',
+                               'matched_ym': 'float',
+                               'xmax': 'float',
+                               'matched__1': 'float',
+                               'label': 'str',
+                               'score': 'float',
+                               'Site': 'str',
+                               'Date': 'str',
+                               'Year': 'str',
+                               'bird_id': 'int',
+                               'target_index': 'int'
+                              }}
+        crs = df.crs
+        empty_results = geopandas.GeoDataFrame(geometry=[])
+        empty_results.to_file(filename, driver='ESRI Shapefile', schema=schema, crs=crs)
+    
     return filename
 
 
