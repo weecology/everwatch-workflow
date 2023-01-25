@@ -80,7 +80,7 @@ def compare_site(gdf):
                 best_match = multiple_matches[multiple_matches["iou"] == max(multiple_matches['iou'])].drop('iou',
                                                                                                             axis=1)
                 possible_matches = possible_matches.drop(possible_matches[possible_matches['Date'] == date].index)
-                possible_matches = possible_matches.append(best_match)
+                possible_matches = geopandas.GeoDataFrame(pd.concat([possible_matches, best_match], ignore_index=True))
 
         # Remove any matches that are claimed by another nest detection
         matches = possible_matches[~(possible_matches.index.isin(claimed_indices))]
@@ -92,7 +92,8 @@ def compare_site(gdf):
         claimed_indices.extend(matches.index.values)
 
         # add target info to match
-        matches = matches.append(row)
+        row = geopandas.GeoDataFrame(pd.DataFrame(row).transpose(), crs = matches.crs)
+        matches = geopandas.GeoDataFrame(pd.concat([matches, row], ignore_index=True))
         matches["target_index"] = index
         matches = matches.rename(
             columns={"xmin": "matched_xmin", "max": "matched_xmax", "ymin": "matched_ymin", "ymax": "matched_ymax"})
@@ -275,4 +276,3 @@ if __name__ == "__main__":
     site = split_path[6]
     savedir = os.path.join("/blue/ewhite/everglades/detected_nests/", year, site)
     detect_nests(paths, year, site, savedir=savedir)
-
