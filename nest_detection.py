@@ -2,38 +2,23 @@
 # Given a set of predictions in /orange/ewhite/everglades/predictions/, generate predicted nests
 import glob
 import os
-import random
 from pathlib import Path
-from zipfile import ZIP_DEFLATED
-from zipfile import ZipFile
-
-import cv2
 import geopandas
-import numpy as np
 import pandas as pd
-import rasterio
-from PIL import Image, ImageDraw
-from panoptes_client import SubjectSet, Subject
-from rasterio.windows import from_bounds
+import sys
 
-import utils
-
-
-def load_files(dirname):
+def load_files(bird_detection_files, year, site):
     """Load shapefiles and concat into large frame"""
-    shapefiles = glob.glob(dirname + "**/**/*.shp")
-
     # load all shapefiles to create a dataframe
     df = []
-    for x in shapefiles:
+    for x in bird_detection_files:
         try:
             # Catch and skip badly structured file names
             # TODO: fix file naming issues so we don't need this
-            print(x)
             eventdf = geopandas.read_file(x)
-            eventdf["Site"] = get_site(x)
+            eventdf["Site"] = site
             eventdf["Date"] = get_date(x)
-            eventdf["Year"] = get_year(x)
+            eventdf["Year"] = year
             df.append(eventdf)
         except IndexError as e:
             print("Filename issue:")
@@ -43,14 +28,6 @@ def load_files(dirname):
 
     return df
 
-
-def get_site(x):
-    """parse filename to return site name"""
-    basename = os.path.basename(x)
-    site = basename.split("_")[0]
-    return site
-
-
 def get_date(x):
     """parse filename to return event name"""
     basename = os.path.basename(x)
@@ -58,14 +35,6 @@ def get_date(x):
     event = "_".join(event)
 
     return event
-
-
-def get_year(x):
-    "parse filename to return the year of sampling"
-    basename = os.path.basename(x)
-    year = basename.split("_")[3]
-    return year
-
 
 def calculate_IoUs(geom, match):
     """Calculate intersection-over-union scores for a pair of boxes"""
@@ -130,125 +99,50 @@ def compare_site(gdf):
 
         results.append(matches)
 
-    if len(results) == 0:
-        return None
-
-    results = pd.concat(results)
+    if results:
+        results = pd.concat(results)
+    else:
+        results = pd.DataFrame(columns = ['matched_xm', 'matched_ym', 'xmax', 'matched__1', 'label', 'score',
+       'Date', 'bird_id', 'target_index', 'geometry'])
 
     return results
 
-
-def check_overlap(geom, gdf):
-    """Find spatially overlapping rows between target and pool of geometries"""
-    matches = gdf.intersects(geom)
-
-    return matches
-
-
-def detect_nests(dirname, savedir):
+def detect_nests(bird_detection_files, year, site, savedir):
     """Given a set of shapefiles, track time series of overlaps and save a shapefile of detected boxes"""
 
-    df = load_files(dirname)
+    if not os.path.exists(savedir):
+        os.makedirs(savedir)
+    filename = os.path.join(savedir, f"{site}_{year}_detected_nests.shp")
+
+    df = load_files(bird_detection_files, year, site)
     df = df.assign(bird_id = range(len(df)))
-    grouped = df.groupby(["Site", "Year"])
-    results = []
-    for name, group in grouped:
-        print(f"Processing {name}")
-        site_results = compare_site(group)
-        if site_results is not None:
-            site_results["Site"] = name[0]
-            site_results["Year"] = name[1]
-            results.append(site_results)
+    results = compare_site(df)
 
-    result_shp = geopandas.GeoDataFrame(pd.concat(results, ignore_index=True))
-    result_shp.crs = df.crs
-
-    filename = "{}/nest_detections.shp".format(savedir)
-    result_shp.to_file(filename)
-
-    return filename
-
-
-def count_max_consec_detects(nest_data, date_data):
-    """Determine the maximum number of consecutive bird detections"""
-    assert date_data.shape[0] == 1, "date_data should be a Pandas DataFrame with one row"
-    sorted_dates = pd.Series(date_data.Date[0]).sort_values().reset_index(drop=True)
-    sorted_nest_dates = pd.Series(nest_data.Date).sort_values().reset_index(drop=True)
-    sorted_dates_dict = {val: key for key, val in sorted_dates.items()}
-    sorted_dates_combined_diff = sorted_nest_dates.map(sorted_dates_dict).diff()
-    all_consec_detects = []
-    consec_detects = 0
-    for i in range(1, len(sorted_dates_combined_diff)):
-        if sorted_dates_combined_diff[i] == 1 and sorted_dates_combined_diff[i - 1] != 1:
-            # New start to consectutive detection set
-            consec_detects = 1
-            if i + 1 == len(sorted_dates_combined_diff):
-                all_consec_detects.append(consec_detects)
-        elif sorted_dates_combined_diff[i] == 1 and sorted_dates_combined_diff[i - 1] == 1:
-            # Increment existing consecutive detection set
-            consec_detects += 1
-            if i + 1 == len(sorted_dates_combined_diff):
-                all_consec_detects.append(consec_detects)
-        elif sorted_dates_combined_diff[i] != 1 and sorted_dates_combined_diff[i - 1] == 1:
-            # Store completed consecutive detection set and reset
-            all_consec_detects.append(consec_detects)
-            consec_detects = 0
-        elif sorted_dates_combined_diff[i] != 1 and sorted_dates_combined_diff[i - 1] != 1:
-            consec_detects == 0
-        else:
-            assert False, "Oops, I shouldn't be here"
-    if all_consec_detects:
-        max_consec_detects = max(all_consec_detects)
+    if not results.empty:
+        results["Site"] = site
+        results["Year"] = year
+        result_shp = geopandas.GeoDataFrame(results)
+        result_shp.crs = df.crs
+        result_shp.to_file(filename)
     else:
-        max_consec_detects = 0
-
-    return max_consec_detects
-
-
-def process_nests(nest_file, savedir, min_score=0.3, min_detections=3, min_consec_detects=1):
-    """Process nests into a one row per nest table"""
-    nests_data = geopandas.read_file(nest_file)
-    dates_data = nests_data.groupby(['Site', 'Year']).agg({'Date': lambda x: x.unique().tolist()}).reset_index()
-    target_inds = nests_data['target_ind'].unique()
-    nests = []
-    for target_ind in target_inds:
-        nest_data = nests_data[(nests_data['target_ind'] == target_ind) & (nests_data['score'] >= min_score)]
-        date_data = dates_data[
-            (dates_data['Site'] == nests_data['Site'][0]) & (dates_data['Year'] == nests_data['Year'][0])]
-        num_consec_detects = count_max_consec_detects(nest_data, date_data)
-        if len(nest_data) >= min_detections or num_consec_detects >= min_consec_detects:
-            summed_scores = nest_data.groupby(['Site', 'Year', 'target_ind', 'label']).score.agg(['sum', 'count'])
-            top_score_data = summed_scores[summed_scores['sum'] == max(summed_scores['sum'])].reset_index()
-            nest_info = nest_data.groupby(['Site', 'Year', 'target_ind']).agg({'Date': ['min', 'max', 'count'],
-                                                                               'matched_xm': ['mean'],
-                                                                               'matched_ym': ['mean'],
-                                                                               'xmax': ['mean'],
-                                                                               'matched__1': ['mean']}).reset_index()
-            xmean = (nest_info['matched_xm']['mean'][0] + nest_info['xmax']['mean']) / 2
-            ymean = (nest_info['matched_ym']['mean'][0] + nest_info['matched__1']['mean']) / 2
-            bird_match = ",".join([str(x) for x in nest_data["bird_id"]])
-            nests.append([target_ind,
-                          nest_info['Site'][0],
-                          nest_info['Year'][0],
-                          xmean[0],
-                          ymean[0],
-                          nest_info['Date']['min'][0],
-                          nest_info['Date']['max'][0],
-                          nest_info['Date']['count'][0],
-                          top_score_data['label'][0],
-                          top_score_data['sum'][0],
-                          top_score_data['count'][0],
-                          bird_match])
-
-    nests = pd.DataFrame(nests, columns=['nest_id', 'Site', 'Year', 'xmean', 'ymean',
-                                         'first_obs', 'last_obs', 'num_obs',
-                                         'species', 'sum_top1_score', 'num_obs_top1', 'bird_match'])
-    nests_shp = geopandas.GeoDataFrame(nests,
-                                       geometry=geopandas.points_from_xy(nests.xmean, nests.ymean))
-    nests_shp.crs = nests_data.crs
-    save_path = f"{savedir}/nest_detections_processed.shp"
-    nests_shp.to_file(save_path)
-    return (save_path)
+        schema = {"geometry": "Polygon",
+                "properties": {'matched_xm': 'float',
+                               'matched_ym': 'float',
+                               'xmax': 'float',
+                               'matched__1': 'float',
+                               'label': 'str',
+                               'score': 'float',
+                               'Site': 'str',
+                               'Date': 'str',
+                               'Year': 'str',
+                               'bird_id': 'int',
+                               'target_index': 'int'
+                              }}
+        crs = df.crs
+        empty_results = geopandas.GeoDataFrame(geometry=[])
+        empty_results.to_file(filename, driver='ESRI Shapefile', schema=schema, crs=crs)
+    
+    return filename
 
 
 def find_rgb_paths(site, paths):
@@ -375,24 +269,10 @@ def find_files():
 
 
 if __name__ == "__main__":
-    nest_shp = Path(detect_nests("/blue/ewhite/everglades/predictions/", savedir="../App/Zooniverse/data/"))
-    processed_nests_shp = Path(process_nests(nest_shp, savedir="../App/Zooniverse/data/"))
+    paths = sys.argv[1:]
+    split_path = os.path.normpath(paths[0]).split(os.path.sep)
+    year = split_path[5]
+    site = split_path[6]
+    savedir = os.path.join("/blue/ewhite/everglades/detected_nests/", year, site)
+    detect_nests(paths, year, site, savedir=savedir)
 
-    # Write nests into folders of clips
-    rgb_pool = find_files()
-    extract_nests(nest_shp, rgb_pool=rgb_pool, savedir="/orange/ewhite/everglades/nest_crops/", upload=False)
-
-    # Zip the shapefiles for storage efficiency
-    with ZipFile("../App/Zooniverse/data/nest_detections.zip", 'w', ZIP_DEFLATED) as zip:
-        for ext in ['.cpg', '.dbf', '.prj', '.shp', '.shx']:
-            focal_file = nest_shp.with_suffix(ext)
-            file_name = focal_file.name
-            zip.write(focal_file, arcname=file_name)
-            os.remove(focal_file)
-
-    with ZipFile("../App/Zooniverse/data/nest_detections_processed.zip", 'w', ZIP_DEFLATED) as zip:
-        for ext in ['.cpg', '.dbf', '.prj', '.shp', '.shx']:
-            focal_file = processed_nests_shp.with_suffix(ext)
-            file_name = focal_file.name
-            zip.write(focal_file, arcname=file_name)
-            os.remove(focal_file)
