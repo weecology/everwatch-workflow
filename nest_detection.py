@@ -103,7 +103,7 @@ def compare_site(gdf):
     if results:
         results = pd.concat(results)
     else:
-        results = pd.DataFrame(columns = ['matched_xm', 'matched_ym', 'xmax', 'matched__1', 'label', 'score',
+        results = pd.DataFrame(columns = ['matched_xmin', 'matched_ymin', 'xmax', 'matched_ymax', 'label', 'score',
        'Date', 'bird_id', 'target_index', 'geometry'])
 
     return results
@@ -119,26 +119,26 @@ def detect_nests(bird_detection_files, year, site, savedir):
     df = df.assign(bird_id = range(len(df)))
     results = compare_site(df)
 
+    schema = {"geometry": "Polygon",
+              "properties": {'matched_xmin': 'float',
+                             'matched_ymin': 'float',
+                             'xmax': 'float',
+                             'matched_ymax': 'float',
+                             'label': 'str',
+                             'score': 'float',
+                             'Site': 'str',
+                             'Date': 'str',
+                             'Year': 'str',
+                             'bird_id': 'int',
+                             'target_index': 'int'
+                            }}
     if not results.empty:
         results["Site"] = site
         results["Year"] = year
         result_shp = geopandas.GeoDataFrame(results)
         result_shp.crs = df.crs
-        result_shp.to_file(filename)
+        result_shp.to_file(filename, schema=schema)
     else:
-        schema = {"geometry": "Polygon",
-                "properties": {'matched_xm': 'float',
-                               'matched_ym': 'float',
-                               'xmax': 'float',
-                               'matched__1': 'float',
-                               'label': 'str',
-                               'score': 'float',
-                               'Site': 'str',
-                               'Date': 'str',
-                               'Year': 'str',
-                               'bird_id': 'int',
-                               'target_index': 'int'
-                              }}
         crs = df.crs
         empty_results = geopandas.GeoDataFrame(geometry=[])
         empty_results.to_file(filename, driver='ESRI Shapefile', schema=schema, crs=crs)
