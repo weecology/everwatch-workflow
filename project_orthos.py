@@ -5,12 +5,12 @@ import rasterio
 from rasterio.warp import calculate_default_transform, reproject, Resampling
 
 
-def utm_project_raster(path, year, site, savedir="/blue/ewhite/everglades/projected_mosaics/"):
+def project_raster(path, year, site, dst_crs, savedir):
+    dest_path = os.path.join(savedir, year, site)
+    if not os.path.exists(dest_path):
+        os.makedirs(dest_path)
     basename = os.path.basename(os.path.splitext(path)[0])
-    dest_name = os.path.join(savedir, year, site, basename + "_projected.tif")
-
-    # Everglades UTM Zone
-    dst_crs = 32617
+    dest_name =  os.path.join(dest_path, basename + "_projected.tif")
 
     with rasterio.open(path) as src:
         transform, width, height = calculate_default_transform(
@@ -42,4 +42,9 @@ if __name__ == "__main__":
     split_path = os.path.normpath(path).split(os.path.sep)
     year = split_path[5]
     site = split_path[6]
-    utm_project_raster(path, year, site)
+    # Project into Everglades UTM zone
+    project_raster(path, year, site, dst_crs = 32617,
+                   savedir="/blue/ewhite/everglades/projected_mosaics/")
+    # Project into webmercator for mapbox
+    project_raster(path, year, site, dst_crs = 3857,
+                   savedir="/blue/ewhite/everglades/projected_mosaics/webmercator/")

@@ -1,70 +1,55 @@
-import glob
 import os
+import requests
 import sys
 import subprocess
+import tomli
 
 import rasterio as rio
 from rasterio.warp import calculate_default_transform, reproject, Resampling
 
-def upload(path, year, site):
-    try:
-        # Create output filename
-        basename = os.path.splitext(os.path.basename(path))[0]
-        mbtiles_filename = "/blue/ewhite/everglades/mapbox/{}.mbtiles".format(basename)
-        if os.path.exists(mbtiles_filename):
-            return mbtiles_filename
-          
-        # Project to web mercator
-        dst_crs = rio.crs.CRS.from_epsg("3857")
-        with rio.open(path) as src:
-            print("Transforming file into web mercator")
-            transform, width, height = calculate_default_transform(
-                src.crs, dst_crs, src.width, src.height, *src.bounds)
-            kwargs = src.meta.copy()
-            kwargs.update({
-                    'crs': dst_crs,
-                    'transform': transform,
-                    'width': width,
-                    'height': height
-            })
+def on_mapbox(flight):
+    """Check if the mbtiles file is has already been uploaded to mapbox"""
+    with open("/blue/ewhite/everglades/mapbox/mapbox.ini", "rb") as f:
+        toml_dict = tomli.load(f)
+        token = toml_dict['mapbox']['access-token']
+    api_base_url = "https://api.mapbox.com/v4"
+    tileset_id = f"bweinstein.{flight}"
+    url = f"{api_base_url}/{tileset_id}.json?access_token={token}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        return True
+    else:
+        return False
 
-            flight = os.path.splitext(os.path.split(path)[1])[0]
-            out_filename = f"/blue/ewhite/everglades/projected_mosaics/webmercator/{year}/{site}/{flight}_projected.tif"
-            if not os.path.exists(out_filename):
-                if not os.path.exists(f"/blue/ewhite/everglades/projected_mosaics/webmercator/{year}/{site}/"):
-                    os.mkdir(f"/blue/ewhite/everglades/projected_mosaics/webmercator/{year}/{site}/")
-                with rio.open(out_filename, 'w', **kwargs) as dst:
-                    for i in range(1, src.count + 1):
-                        reproject(
-                               source=rio.band(src, i),
-                               destination=rio.band(dst, i),
-                               src_transform=src.transform,
-                               src_crs=src.crs,
-                               dst_transform=transform,
-                               dst_crs=dst_crs,
-                               resampling=Resampling.nearest)
-     
-        # Generate tiles
-        print("Creating mbtiles file")
-        subprocess.run(["rio", "mbtiles", out_filename, "-o", mbtiles_filename, "--zoom-levels", "17..24", "-j", "4", "-f", "PNG", "--progress-bar"])
+def upload(path, year, site, force_upload=False):
+    # Create output filename
+    basename = os.path.splitext(os.path.basename(path))[0]
+    flight = basename.replace("_projected", "")
+    mbtiles_dir = os.path.join("/blue/ewhite/everglades/mapbox/", year, site)
+    if not os.path.exists(mbtiles_dir):
+        os.makedirs(mbtiles_dir)
+    mbtiles_filename = os.path.join(mbtiles_dir, f"{flight}.mbtiles")
+ 
+    # Generate tiles
+    print("Creating mbtiles file")
+    subprocess.run(["rio", "mbtiles", path, "-o", mbtiles_filename, "--zoom-levels", "17..24", "-j", "4", "-f", "PNG", "--progress-bar"])
 
-        # Upload to mapbox
-        print("Uploading to mapbox")
+    # Upload to mapbox
+    print("Uploading to mapbox")
+    if force_upload or not on_mapbox(flight):
         subprocess.run(["mapbox", "upload", f"bweinstein.{basename}", mbtiles_filename])
-     
-    except Exception as e:
-        return "path: {} raised: {}".format(path, e)
-          
+    else:
+        print(f"{flight} is already on Mapbox, not uploading. To force reupload use --force-upload")
+        
     return mbtiles_filename
 
 if __name__=="__main__":
-     
-     files_to_upload = glob.glob("/blue/ewhite/everglades/orthomosaics/2022/**/*.tif", recursive=True)
-     files_to_upload = [x for x in files_to_upload if "projected" not in x]
-
-     for index, path in enumerate(files_to_upload):
-        print(f"Uploading file {path} ({index + 1}/{len(files_to_upload)})")
-        split_path = os.path.normpath(path).split(os.path.sep)
-        year = split_path[5]
-        site = split_path[6]
-        upload(path, year, site)
+    path = sys.argv[1]     
+    split_path = os.path.normpath(path).split(os.path.sep)
+    year = split_path[6]
+    site = split_path[7]
+    if len(sys.argv) == 3 and sys.argv[2] == "--force-upload":
+        force_upload = True
+    else:
+        force_upload = False
+    upload(path, year, site, force_upload=force_upload)

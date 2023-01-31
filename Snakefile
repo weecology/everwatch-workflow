@@ -13,14 +13,17 @@ rule all:
         expand("/blue/ewhite/everglades/predictions/{year}/{site}/{flight}_projected.shp",
                zip, site=SITES, year=YEARS, flight=FLIGHTS),
         expand("/blue/ewhite/everglades/processed_nests/{year}/{site}/{site}_{year}_processed_nests.shp",
-               zip, site=SITES, year=YEARS)
+               zip, site=SITES, year=YEARS),
+        expand("/blue/ewhite/everglades/mapbox/{year}/{site}/{flight}.mbtiles",
+               zip, site=SITES, year=YEARS, flight=FLIGHTS)
 
 
 rule project_mosaics:
     input:
         "/blue/ewhite/everglades/orthomosaics/{year}/{site}/{flight}.tif"
     output:
-        "/blue/ewhite/everglades/projected_mosaics/{year}/{site}/{flight}_projected.tif"
+        "/blue/ewhite/everglades/projected_mosaics/{year}/{site}/{flight}_projected.tif",
+        "/blue/ewhite/everglades/projected_mosaics/webmercator/{year}/{site}/{flight}_projected.tif"
     shell:
         "python project_orthos.py {input}"
 
@@ -76,3 +79,11 @@ rule combine_nests:
         "/blue/ewhite/everglades/EvergladesTools/App/Zooniverse/data/nest_detections_processed.zip"
     shell:
         "python combine_nests.py"
+
+rule upload_mapbox:
+    input:
+        "/blue/ewhite/everglades/projected_mosaics/webmercator/{year}/{site}/{flight}_projected.tif"
+    output:
+        "/blue/ewhite/everglades/mapbox/{year}/{site}/{flight}.mbtiles"
+    shell:
+        "python upload_mapbox.py {input}"
