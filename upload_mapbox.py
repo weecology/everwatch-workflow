@@ -8,7 +8,7 @@ import rasterio as rio
 from rasterio.warp import calculate_default_transform, reproject, Resampling
 
 def on_mapbox(flight):
-    """Check if the mbtiles file is has already been uploaded to mapbox"""
+    """Check if the mbtiles file has already been uploaded to mapbox"""
     with open("/blue/ewhite/everglades/mapbox/mapbox.ini", "rb") as f:
         toml_dict = tomli.load(f)
         token = toml_dict['mapbox']['access-token']
@@ -16,10 +16,7 @@ def on_mapbox(flight):
     tileset_id = f"bweinstein.{flight}"
     url = f"{api_base_url}/{tileset_id}.json?access_token={token}"
     response = requests.get(url)
-    if response.status_code == 200:
-        return True
-    else:
-        return False
+    return response.status_code == 200
 
 def upload(path, year, site, force_upload=False):
     # Create output filename
