@@ -3,33 +3,21 @@ import os
 import re
 from zipfile import ZIP_DEFLATED
 from zipfile import ZipFile
-
 import geopandas
 import pandas as pd
 
+import tools
 
 def find_shp_files(predictions_path):
     files = glob.glob(os.path.join(predictions_path, '**', '**', '*_projected.shp'))
     return files
 
 
-def get_site(path):
-    path = os.path.basename(path)
-    regex = re.compile("(\\w+)_\\d+_\\d+_\\d+.*_projected")
-    return regex.match(path).group(1)
-
-
-def get_event(path):
-    path = os.path.basename(path)
-    regex = re.compile('\\w+_(\\d+_\\d+_\\d+).*_projected')
-    return regex.match(path).group(1)
-
-
 def load_shapefile(x):
-    print(x)
     shp = geopandas.read_file(x)
-    shp["site"] = get_site(x)
-    shp["event"] = get_event(x)
+    shp["site"] = tools.get_site(x)
+    shp["date"] = tools.get_date(x)
+    shp["event"] = tools.get_event(x)
     return shp
 
 
