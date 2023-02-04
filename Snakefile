@@ -1,5 +1,6 @@
 import glob
 import os
+import tools
 
 ORTHOMOSAICS = glob_wildcards("/blue/ewhite/everglades/orthomosaics/{year}/{site}/{flight}.tif")
 FLIGHTS = ORTHOMOSAICS.flight
@@ -50,8 +51,9 @@ def flights_in_year_site(wildcards):
     basepath = "/blue/ewhite/everglades/predictions"
     flights_in_year_site = []
     for site, year, flight in zip(SITES, YEARS, FLIGHTS):
-        if site == wildcards.site and year == wildcards.year:
-            flight_path = os.path.join(basepath, year, site, f"{flight}_projected.shp")
+        flight_path = os.path.join(basepath, year, site, f"{flight}_projected.shp")
+        event = tools.get_event(flight_path)
+        if site == wildcards.site and year == wildcards.year and event == "primary":
             flights_in_year_site.append(flight_path)
     return flights_in_year_site
 

@@ -3,6 +3,7 @@ import requests
 import sys
 import subprocess
 import tomli
+import tools
 
 import rasterio as rio
 from rasterio.warp import calculate_default_transform, reproject, Resampling
@@ -22,6 +23,9 @@ def upload(path, year, site, force_upload=False):
     # Create output filename
     basename = os.path.splitext(os.path.basename(path))[0]
     flight = basename.replace("_projected", "")
+    if tools.get_event(basename) == "Primary":
+        # If from the primary flight strip any extra metadata from filename
+        flight = "_".join(basename.split('_')[0:4])
     mbtiles_dir = os.path.join("/blue/ewhite/everglades/mapbox/", year, site)
     if not os.path.exists(mbtiles_dir):
         os.makedirs(mbtiles_dir)
