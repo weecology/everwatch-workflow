@@ -12,7 +12,7 @@ rule all:
         "/blue/ewhite/everglades/EvergladesTools/App/Zooniverse/data/PredictedBirds.zip",
         "/blue/ewhite/everglades/EvergladesTools/App/Zooniverse/data/nest_detections_processed.zip",
         expand("/blue/ewhite/everglades/predictions/{year}/{site}/{flight}_projected.shp",
-               zip, site=SITES, year=YEARS, flight=FLIGHTS),
+               zip, site=SITES, year=YEARS, flight=FLIGHTS), #not sure if still needed
         expand("/blue/ewhite/everglades/processed_nests/{year}/{site}/{site}_{year}_processed_nests.shp",
                zip, site=SITES, year=YEARS),
         expand("/blue/ewhite/everglades/mapbox/{year}/{site}/{flight}.mbtiles",
@@ -38,15 +38,6 @@ rule predict_birds:
     shell:
         "python predict.py {input}"
 
-rule combine_predicted_birds:
-    input:
-        expand("/blue/ewhite/everglades/predictions/{year}/{site}/{flight}_projected.shp",
-               zip, site=SITES, year=YEARS, flight=FLIGHTS)
-    output:
-        "/blue/ewhite/everglades/EvergladesTools/App/Zooniverse/data/PredictedBirds.zip"
-    shell:
-        "python combine_bird_predictions.py"
-
 def flights_in_year_site(wildcards):
     basepath = "/blue/ewhite/everglades/predictions"
     flights_in_year_site = []
@@ -56,6 +47,35 @@ def flights_in_year_site(wildcards):
         if site == wildcards.site and year == wildcards.year and event == "primary":
             flights_in_year_site.append(flight_path)
     return flights_in_year_site
+
+rule combine_birds_site_year:
+    input:
+        flights_in_year_site
+    output:
+        "/blue/ewhite/everglades/predictions/{year}/{site}/{site}_{year}_combined.shp"
+    shell:
+        "python combine_birds_site_year.py {input}"
+
+def site_year_combos(wildcards):
+    basepath = "/blue/ewhite/everglades/predictions"
+    items = set()
+    for item in zip(SITES, YEARS):
+        items.add(item)
+    site_year_combos = []
+    for item in items:
+        site = item[0]
+        year = item[1]
+        site_year_path = os.path.join(basepath, year, site, f"{site}_{year}_combined.shp")
+        site_year_combos.append(site_year_path)
+    return site_year_combos
+
+rule combine_predicted_birds:
+    input:
+        site_year_combos
+    output:
+        "/blue/ewhite/everglades/EvergladesTools/App/Zooniverse/data/PredictedBirds.zip"
+    shell:
+        "python combine_bird_predictions.py {input}"
 
 rule detect_nests:
     input:
