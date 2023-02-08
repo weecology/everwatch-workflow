@@ -58,15 +58,10 @@ rule combine_birds_site_year:
 
 def site_year_combos(wildcards):
     basepath = "/blue/ewhite/everglades/predictions"
-    items = set()
-    for item in zip(SITES, YEARS):
-        items.add(item)
-    site_year_combos = []
-    for item in items:
-        site = item[0]
-        year = item[1]
-        site_year_path = os.path.join(basepath, year, site, f"{site}_{year}_combined.shp")
-        site_year_combos.append(site_year_path)
+    # There a multiple copies of site-year combinations due to multiple flights
+    # So make them unique using a set
+    items = {item for item in zip(SITES, YEARS)}
+    site_year_combos = [os.path.join(basepath, year, site, f"{site}_{year}_combined.shp") for site, year in items]
     return site_year_combos
 
 rule combine_predicted_birds:
