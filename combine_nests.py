@@ -1,17 +1,12 @@
 import glob
 import os
 import re
+import sys
 from zipfile import ZIP_DEFLATED
 from zipfile import ZipFile
 
 import geopandas
 import pandas as pd
-
-
-def find_shp_files(nests_path):
-    files = glob.glob(os.path.join(nests_path, '**', '**', '*_processed_nests.shp'))
-    return files
-
 
 def get_site(path):
     path = os.path.basename(path)
@@ -58,7 +53,7 @@ if __name__ == "__main__":
     nests_path = "/blue/ewhite/everglades/processed_nests/"
     output_path = "/blue/ewhite/everglades/EvergladesTools/App/Zooniverse/data/"
 
-    nest_files = find_shp_files(nests_path)
+    nest_files = sys.argv[1:]
     # write output to zooniverse app
     df = combine(nest_files)
     df.to_file(os.path.join(output_path, "nest_detections_processed.shp"))

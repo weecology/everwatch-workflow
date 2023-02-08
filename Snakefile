@@ -6,6 +6,8 @@ ORTHOMOSAICS = glob_wildcards("/blue/ewhite/everglades/orthomosaics/{year}/{site
 FLIGHTS = ORTHOMOSAICS.flight
 SITES = ORTHOMOSAICS.site
 YEARS = ORTHOMOSAICS.year
+site_year_combos = {*zip(SITES, YEARS)}
+SITES_SY, YEARS_SY = list(zip(*site_year_combos))
 
 rule all:
     input:
@@ -56,17 +58,10 @@ rule combine_birds_site_year:
     shell:
         "python combine_birds_site_year.py {input}"
 
-def site_year_combos(wildcards):
-    basepath = "/blue/ewhite/everglades/predictions"
-    # There a multiple copies of site-year combinations due to multiple flights
-    # So make them unique using a set
-    items = {item for item in zip(SITES, YEARS)}
-    site_year_combos = [os.path.join(basepath, year, site, f"{site}_{year}_combined.shp") for site, year in items]
-    return site_year_combos
-
 rule combine_predicted_birds:
     input:
-        site_year_combos
+        expand("/blue/ewhite/everglades/predictions/{year}/{site}/{site}_{year}_combined.shp",
+               zip, site=SITES_SY, year=YEARS_SY)
     output:
         "/blue/ewhite/everglades/EvergladesTools/App/Zooniverse/data/PredictedBirds.zip"
     shell:
@@ -74,7 +69,7 @@ rule combine_predicted_birds:
 
 rule detect_nests:
     input:
-        flights_in_year_site
+        "/blue/ewhite/everglades/predictions/{year}/{site}/{site}_{year}_combined.shp"
     output:
         "/blue/ewhite/everglades/detected_nests/{year}/{site}/{site}_{year}_detected_nests.shp"
     shell:
@@ -91,11 +86,11 @@ rule process_nests:
 rule combine_nests:
     input:
         expand("/blue/ewhite/everglades/processed_nests/{year}/{site}/{site}_{year}_processed_nests.shp",
-               zip, site=SITES, year=YEARS)
+               zip, site=SITES_SY, year=YEARS_SY)
     output:
         "/blue/ewhite/everglades/EvergladesTools/App/Zooniverse/data/nest_detections_processed.zip"
     shell:
-        "python combine_nests.py"
+        "python combine_nests.py {input}"
 
 rule upload_mapbox:
     input:
