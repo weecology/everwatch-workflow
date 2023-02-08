@@ -6,13 +6,15 @@ ORTHOMOSAICS = glob_wildcards("/blue/ewhite/everglades/orthomosaics/{year}/{site
 FLIGHTS = ORTHOMOSAICS.flight
 SITES = ORTHOMOSAICS.site
 YEARS = ORTHOMOSAICS.year
+site_year_combos = {*zip(SITES, YEARS)}
+SITES_SY, YEARS_SY = list(zip(*site_year_combos))
 
 rule all:
     input:
         "/blue/ewhite/everglades/EvergladesTools/App/Zooniverse/data/PredictedBirds.zip",
         "/blue/ewhite/everglades/EvergladesTools/App/Zooniverse/data/nest_detections_processed.zip",
         expand("/blue/ewhite/everglades/predictions/{year}/{site}/{flight}_projected.shp",
-               zip, site=SITES, year=YEARS, flight=FLIGHTS),
+               zip, site=SITES, year=YEARS, flight=FLIGHTS), #not sure if still needed
         expand("/blue/ewhite/everglades/processed_nests/{year}/{site}/{site}_{year}_processed_nests.shp",
                zip, site=SITES, year=YEARS),
         expand("/blue/ewhite/everglades/mapbox/{year}/{site}/{flight}.mbtiles",
@@ -38,15 +40,6 @@ rule predict_birds:
     shell:
         "python predict.py {input}"
 
-rule combine_predicted_birds:
-    input:
-        expand("/blue/ewhite/everglades/predictions/{year}/{site}/{flight}_projected.shp",
-               zip, site=SITES, year=YEARS, flight=FLIGHTS)
-    output:
-        "/blue/ewhite/everglades/EvergladesTools/App/Zooniverse/data/PredictedBirds.zip"
-    shell:
-        "python combine_bird_predictions.py"
-
 def flights_in_year_site(wildcards):
     basepath = "/blue/ewhite/everglades/predictions"
     flights_in_year_site = []
@@ -57,9 +50,26 @@ def flights_in_year_site(wildcards):
             flights_in_year_site.append(flight_path)
     return flights_in_year_site
 
-rule detect_nests:
+rule combine_birds_site_year:
     input:
         flights_in_year_site
+    output:
+        "/blue/ewhite/everglades/predictions/{year}/{site}/{site}_{year}_combined.shp"
+    shell:
+        "python combine_birds_site_year.py {input}"
+
+rule combine_predicted_birds:
+    input:
+        expand("/blue/ewhite/everglades/predictions/{year}/{site}/{site}_{year}_combined.shp",
+               zip, site=SITES_SY, year=YEARS_SY)
+    output:
+        "/blue/ewhite/everglades/EvergladesTools/App/Zooniverse/data/PredictedBirds.zip"
+    shell:
+        "python combine_bird_predictions.py {input}"
+
+rule detect_nests:
+    input:
+        "/blue/ewhite/everglades/predictions/{year}/{site}/{site}_{year}_combined.shp"
     output:
         "/blue/ewhite/everglades/detected_nests/{year}/{site}/{site}_{year}_detected_nests.shp"
     shell:
@@ -76,11 +86,11 @@ rule process_nests:
 rule combine_nests:
     input:
         expand("/blue/ewhite/everglades/processed_nests/{year}/{site}/{site}_{year}_processed_nests.shp",
-               zip, site=SITES, year=YEARS)
+               zip, site=SITES_SY, year=YEARS_SY)
     output:
         "/blue/ewhite/everglades/EvergladesTools/App/Zooniverse/data/nest_detections_processed.zip"
     shell:
-        "python combine_nests.py"
+        "python combine_nests.py {input}"
 
 rule upload_mapbox:
     input:

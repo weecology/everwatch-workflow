@@ -7,34 +7,7 @@ import geopandas
 import pandas as pd
 import sys
 
-def load_files(bird_detection_files, year, site):
-    """Load shapefiles and concat into large frame"""
-    # load all shapefiles to create a dataframe
-    df = []
-    for x in bird_detection_files:
-        try:
-            # Catch and skip badly structured file names
-            # TODO: fix file naming issues so we don't need this
-            eventdf = geopandas.read_file(x)
-            eventdf["Site"] = site
-            eventdf["Date"] = get_date(x)
-            eventdf["Year"] = year
-            df.append(eventdf)
-        except IndexError as e:
-            print("Filename issue:")
-            print(e)
-    df = geopandas.GeoDataFrame(pd.concat(df, ignore_index=True))
-    df.crs = eventdf.crs
-
-    return df
-
-def get_date(x):
-    """parse filename to return event name"""
-    basename = os.path.basename(x)
-    event = basename.split("_")[1:4]
-    event = "_".join(event)
-
-    return event
+import tools
 
 def calculate_IoUs(geom, match):
     """Calculate intersection-over-union scores for a pair of boxes"""
@@ -108,15 +81,14 @@ def compare_site(gdf):
 
     return results
 
-def detect_nests(bird_detection_files, year, site, savedir):
+def detect_nests(bird_detection_file, year, site, savedir):
     """Given a set of shapefiles, track time series of overlaps and save a shapefile of detected boxes"""
 
     if not os.path.exists(savedir):
         os.makedirs(savedir)
     filename = os.path.join(savedir, f"{site}_{year}_detected_nests.shp")
+    df = geopandas.read_file(bird_detection_file)
 
-    df = load_files(bird_detection_files, year, site)
-    df = df.assign(bird_id = range(len(df)))
     results = compare_site(df)
 
     schema = {"geometry": "Polygon",
@@ -130,6 +102,7 @@ def detect_nests(bird_detection_files, year, site, savedir):
                              'Date': 'str',
                              'Year': 'str',
                              'bird_id': 'int',
+                             'event': 'str',
                              'target_index': 'int'
                             }}
     if not results.empty:
@@ -270,9 +243,9 @@ def find_files():
 
 
 if __name__ == "__main__":
-    paths = sys.argv[1:]
-    split_path = os.path.normpath(paths[0]).split(os.path.sep)
+    path = sys.argv[1]
+    split_path = os.path.normpath(path).split(os.path.sep)
     year = split_path[5]
     site = split_path[6]
     savedir = os.path.join("/blue/ewhite/everglades/detected_nests/", year, site)
-    detect_nests(paths, year, site, savedir=savedir)
+    detect_nests(path, year, site, savedir=savedir)
