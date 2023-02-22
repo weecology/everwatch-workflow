@@ -1,0 +1,9 @@
+name: Zooniverse
+channels: [conda-forge]
+dependencies:
+  - python
+  - yapf
+  - black
+  - pytest-cov
+  - pytest-xdist
+  - pdoc

@@ -1,0 +1,40 @@
+name: YAPF Google chromium style
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  ci:
+    name: "CI setup"
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - 3.9
+        os:
+          - "ubuntu-latest"
+
+    runs-on: "${{ matrix.os }}"
+
+    # use bash everywhere
+    defaults:
+      run:
+        shell: "bash -l {0}"
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: mamba-org/provision-with-micromamba@v15
+        with:
+          environment-name: Zooniverse
+          environment-file: Zooniverse/dev_environment.yml
+          python-version: "${{ matrix.python-version }}"
+          cache-env: true
+          cache-downloads: true
+
+      - name: "Run tests"
+        run: |
+          yapf -d --recursive ./Zooniverse/ --style=.style.yapf 2>&1
