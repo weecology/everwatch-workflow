@@ -9,6 +9,7 @@ import sys
 
 import tools
 
+
 def calculate_IoUs(geom, match):
     """Calculate intersection-over-union scores for a pair of boxes"""
     intersection = geom.intersection(match).area
@@ -65,21 +66,28 @@ def compare_site(gdf):
         claimed_indices.extend(matches.index.values)
 
         # add target info to match
-        row = geopandas.GeoDataFrame(pd.DataFrame(row).transpose(), crs = matches.crs)
+        row = geopandas.GeoDataFrame(pd.DataFrame(row).transpose(), crs=matches.crs)
         matches = geopandas.GeoDataFrame(pd.concat([matches, row], ignore_index=True))
         matches["target_index"] = index
-        matches = matches.rename(
-            columns={"xmin": "matched_xmin", "max": "matched_xmax", "ymin": "matched_ymin", "ymax": "matched_ymax"})
+        matches = matches.rename(columns={
+            "xmin": "matched_xmin",
+            "max": "matched_xmax",
+            "ymin": "matched_ymin",
+            "ymax": "matched_ymax"
+        })
 
         results.append(matches)
 
     if results:
         results = pd.concat(results)
     else:
-        results = pd.DataFrame(columns = ['matched_xmin', 'matched_ymin', 'xmax', 'matched_ymax', 'label', 'score',
-       'Date', 'bird_id', 'target_index', 'geometry'])
+        results = pd.DataFrame(columns=[
+            'matched_xmin', 'matched_ymin', 'xmax', 'matched_ymax', 'label', 'score', 'Date', 'bird_id', 'target_index',
+            'geometry'
+        ])
 
     return results
+
 
 def detect_nests(bird_detection_file, year, site, savedir):
     """Given a set of shapefiles, track time series of overlaps and save a shapefile of detected boxes"""
@@ -91,20 +99,23 @@ def detect_nests(bird_detection_file, year, site, savedir):
 
     results = compare_site(df)
 
-    schema = {"geometry": "Polygon",
-              "properties": {'matched_xmin': 'float',
-                             'matched_ymin': 'float',
-                             'xmax': 'float',
-                             'matched_ymax': 'float',
-                             'label': 'str',
-                             'score': 'float',
-                             'Site': 'str',
-                             'Date': 'str',
-                             'Year': 'str',
-                             'bird_id': 'int',
-                             'event': 'str',
-                             'target_index': 'int'
-                            }}
+    schema = {
+        "geometry": "Polygon",
+        "properties": {
+            'matched_xmin': 'float',
+            'matched_ymin': 'float',
+            'xmax': 'float',
+            'matched_ymax': 'float',
+            'label': 'str',
+            'score': 'float',
+            'Site': 'str',
+            'Date': 'str',
+            'Year': 'str',
+            'bird_id': 'int',
+            'event': 'str',
+            'target_index': 'int'
+        }
+    }
     if not results.empty:
         results["Site"] = site
         results["Year"] = year
@@ -115,7 +126,7 @@ def detect_nests(bird_detection_file, year, site, savedir):
         crs = df.crs
         empty_results = geopandas.GeoDataFrame(geometry=[])
         empty_results.to_file(filename, driver='ESRI Shapefile', schema=schema, crs=crs)
-    
+
     return filename
 
 

@@ -8,6 +8,7 @@ from zipfile import ZipFile
 import geopandas
 import pandas as pd
 
+
 def get_site(path):
     path = os.path.basename(path)
     regex = re.compile("(\\w+)_\\d+.*_processed_nests")
@@ -19,19 +20,20 @@ def load_shapefile(x):
     # Force correct types
     # Empty shape files don't see to maintain provided types
     # when written and loaded
-    shp = shp.astype({'nest_id': 'int',
-                      'Site': 'str',
-                      'Year': 'str',
-                      'xmean': 'float',
-                      'ymean': 'float',
-                      'first_obs': 'str',
-                      'last_obs': 'str',
-                      'num_obs': 'int',
-                      'species': 'str',
-                      'sum_top1_s': 'float',
-                      'num_obs_to': 'int',
-                      'bird_match': 'str'
-                     })
+    shp = shp.astype({
+        'nest_id': 'int',
+        'Site': 'str',
+        'Year': 'str',
+        'xmean': 'float',
+        'ymean': 'float',
+        'first_obs': 'str',
+        'last_obs': 'str',
+        'num_obs': 'int',
+        'species': 'str',
+        'sum_top1_s': 'float',
+        'num_obs_to': 'int',
+        'bird_match': 'str'
+    })
     shp["site"] = get_site(x)
     return shp
 

@@ -6,6 +6,7 @@ import pandas as pd
 
 import tools
 
+
 def combine_files(bird_detection_files, year, site, score_thresh, savedir):
     """Load shapefiles and concat into large frame"""
     # load all shapefiles to create a dataframe
@@ -26,11 +27,12 @@ def combine_files(bird_detection_files, year, site, score_thresh, savedir):
             print(e)
     df = geopandas.GeoDataFrame(pd.concat(df, ignore_index=True))
     df.crs = eventdf.crs
-    df = df.assign(bird_id = range(1, len(df) + 1)) # Index bird IDs starting at 1
+    df = df.assign(bird_id=range(1, len(df) + 1))  # Index bird IDs starting at 1
     filename = os.path.join(savedir, f"{site}_{year}_combined.shp")
     df.to_file(filename)
 
     return df
+
 
 if __name__ == "__main__":
     score_thresh = 0.3

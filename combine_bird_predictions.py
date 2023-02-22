@@ -5,6 +5,7 @@ from zipfile import ZipFile
 import geopandas
 import pandas as pd
 
+
 def combine(paths):
     """Take prediction shapefiles and wrap into a single file"""
     shapefiles = []

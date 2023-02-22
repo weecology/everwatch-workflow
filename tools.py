@@ -1,12 +1,14 @@
 import os
 import re
 
+
 def get_date(x):
     """parse filename to return event name"""
     basename = os.path.basename(x)
     date = basename.split("_")[1:4]
     date = "_".join(date)
     return date
+
 
 def get_event(path):
     """
@@ -29,10 +31,12 @@ def get_event(path):
     else:
         return "primary"
 
+
 def get_site(path):
     path = os.path.basename(path)
     regex = re.compile("(\\w+)_\\d+_\\d+_\\d+.*_projected")
     return regex.match(path).group(1)
+
 
 def get_year(path):
     date = get_date(path)
