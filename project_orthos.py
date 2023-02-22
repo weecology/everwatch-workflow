@@ -10,11 +10,10 @@ def project_raster(path, year, site, dst_crs, savedir):
     if not os.path.exists(dest_path):
         os.makedirs(dest_path)
     basename = os.path.basename(os.path.splitext(path)[0])
-    dest_name =  os.path.join(dest_path, basename + "_projected.tif")
+    dest_name = os.path.join(dest_path, basename + "_projected.tif")
 
     with rasterio.open(path) as src:
-        transform, width, height = calculate_default_transform(
-            src.crs, dst_crs, src.width, src.height, *src.bounds)
+        transform, width, height = calculate_default_transform(src.crs, dst_crs, src.width, src.height, *src.bounds)
         kwargs = src.meta.copy()
         kwargs.update({
             'crs': rasterio.crs.CRS.from_epsg(dst_crs),
@@ -25,14 +24,13 @@ def project_raster(path, year, site, dst_crs, savedir):
 
         with rasterio.open(dest_name, 'w', **kwargs) as dst:
             for i in range(1, src.count + 1):
-                reproject(
-                    source=rasterio.band(src, i),
-                    destination=rasterio.band(dst, i),
-                    src_transform=src.transform,
-                    src_crs=src.crs,
-                    dst_transform=transform,
-                    dst_crs=dst_crs,
-                    resampling=Resampling.nearest)
+                reproject(source=rasterio.band(src, i),
+                          destination=rasterio.band(dst, i),
+                          src_transform=src.transform,
+                          src_crs=src.crs,
+                          dst_transform=transform,
+                          dst_crs=dst_crs,
+                          resampling=Resampling.nearest)
 
     return dest_name
 
@@ -43,8 +41,6 @@ if __name__ == "__main__":
     year = split_path[5]
     site = split_path[6]
     # Project into Everglades UTM zone
-    project_raster(path, year, site, dst_crs = 32617,
-                   savedir="/blue/ewhite/everglades/projected_mosaics/")
+    project_raster(path, year, site, dst_crs=32617, savedir="/blue/ewhite/everglades/projected_mosaics/")
     # Project into webmercator for mapbox
-    project_raster(path, year, site, dst_crs = 3857,
-                   savedir="/blue/ewhite/everglades/projected_mosaics/webmercator/")
+    project_raster(path, year, site, dst_crs=3857, savedir="/blue/ewhite/everglades/projected_mosaics/webmercator/")
