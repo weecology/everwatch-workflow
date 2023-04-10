@@ -25,7 +25,7 @@ def upload(path, year, site, force_upload=False):
     # Create output filename
     basename = os.path.splitext(os.path.basename(path))[0]
     flight = basename.replace("_projected", "")
-    if tools.get_event(basename) == "Primary":
+    if tools.get_event(basename) == "primary":
         # If from the primary flight strip any extra metadata from filename
         flight = "_".join(basename.split('_')[0:4])
     mbtiles_dir = os.path.join("/blue/ewhite/everglades/mapbox/", year, site)
@@ -43,7 +43,7 @@ def upload(path, year, site, force_upload=False):
     # Upload to mapbox
     print("Uploading to mapbox")
     if force_upload or not on_mapbox(flight):
-        subprocess.run(["mapbox", "upload", f"bweinstein.{basename}", mbtiles_filename])
+        subprocess.run(["mapbox", "upload", f"bweinstein.{flight}", mbtiles_filename])
     else:
         print(f"{flight} is already on Mapbox, not uploading. To force reupload use --force-upload")
 
