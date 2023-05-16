@@ -27,4 +27,6 @@ source_token.txt
 .Rhistory
 .vscode/launch.json
 App/.R*
-App/App.Rproj
+*.Rproj*
+*.RData*
+

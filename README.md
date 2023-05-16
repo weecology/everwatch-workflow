@@ -27,6 +27,11 @@ Project Organization
 
 The tokens.py file needs to be placed (outside of git) in the /Zooniverse folder to authenticate. This file was provided on the everglades slack channel within Weecology organization.
 
+# Set Up
+
+Accessing Mapbox requires an [API access token](https://www.mapbox.com/studio/account/tokens/). The access token can be set using `.Renviron` in either the working directory or home directory or by exporting it as an environment variable `$ export MAPBOX_ACCESS_TOKEN=MY_TOKEN`
+
+
 # Download and clean Zooniverse annotations
 
 To download the image crops and corresponding annotations
