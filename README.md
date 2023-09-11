@@ -78,7 +78,7 @@ There is a Snakemake workflow that runs most of (soon all of) the steps for pred
 The run the snakemake workflow from a node with the appropriate resources run:
 
 ```bash
-snakemake --printshellcmds --keep-going -jobs 10 --resources gpu=2
+snakemake --printshellcmds --keep-going --cores 10 --resources gpu=2
 ```
 
 Replace `10` with the number of cores to run on and `2` with the number of gpus available.
@@ -175,8 +175,8 @@ Exploring differently processed imagery requires hosting that imagery on Mapbox.
 Currently the only approach supported for viewing in the Shiny App is replacing the production imagery.
 
 1. Add the new orthomosaics to the HiPerGator
-2. Project the orthomosaics using `snakemake -R project_mosaics --keep-going -jobs 10` where the number after jobs is the number of workers. Scaling will be near linear with the number of workers. This should automatically reproject any orthomosaics that have been updated
+2. Project the orthomosaics using `snakemake -R project_mosaics --keep-going --cores 10` where the number after jobs is the number of workers. Scaling will be near linear with the number of workers. This should automatically reproject any orthomosaics that have been updated
 3. Add imagery to mapbox
-   1. If the imagery is for a new location/date you push all of the new imagery to mapbox using `snakemake -R upload_mapbox --keep-going -jobs 10`
+   1. If the imagery is for a new location/date you push all of the new imagery to mapbox using `snakemake -R upload_mapbox --keep-going --cores 10`
    2. If you are updating existing imagery you will need to force it to be updated. For each file you want to update run `python upload_mapbox.py /path/to/file --force-upload`. This will overwrite the current file on mapbox.
 4. Load the app as described above. The app loads the imagery from mapbox. If it isn't updated it may be that mapbox is still processing the updated files. 
