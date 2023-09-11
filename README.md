@@ -146,8 +146,37 @@ The existing code steps (3) - (5) is in `upload_mapbox.py`
 install.packages(c('shiny', 'shinythemes', 'shinyWidgets', 'leaflet', 'sf'))
 ```
 
-## Runn the app
+## Run the app
 
 ```r
 shiny::runApp('./App/Zooniverse')
 ```
+
+## Viewing new data in the Shiny App
+
+Sometimes when we are doing work on the image manipulation or models it is useful to preview new data in Shiny app.
+This involves two components:
+
+1. New data on the location of birds
+2. New imagery which is served via mapbox
+
+### New data on birds
+
+This component can be explored without impacting the overall workflow by following these steps:
+
+1. Generate new bird predictions
+2. Don't commit these data to the primary source (https://github.com/weecology/EvergladesTools/tree/main/App/Zooniverse/data)
+3. Replace the relevant files, typically `PredictedBirds.zip` or `nest_detections_processed.zip`, in your local repository in the `App/Zooniverse/data` directory
+4. Load the App as described above
+
+### Newly processed imagery
+
+Exploring differently processed imagery requires hosting that imagery on Mapbox.
+Currently the only approach supported for viewing in the Shiny App is replacing the production imagery.
+
+1. Add the new orthomosaics to the HiPerGator
+2. Project the orthomosaics using `snakemake -R project_mosaics --keep-going -jobs 10` where the number after jobs is the number of workers. Scaling will be near linear with the number of workers. This should automatically reproject any orthomosaics that have been updated
+3. Add imagery to mapbox
+   1. If the imagery is for a new location/date you push all of the new imagery to mapbox using `snakemake -R upload_mapbox --keep-going -jobs 10`
+   2. If you are updating existing imagery you will need to force it to be updated. For each file you want to update run `python upload_mapbox.py /path/to/file --force-upload`. This will overwrite the current file on mapbox.
+4. Load the app as described above. The app loads the imagery from mapbox. If it isn't updated it may be that mapbox is still processing the updated files. 
