@@ -1,20 +1,33 @@
 name: EvergladesTools
 channels: 
   - defaults
+  - conda-forge
 dependencies:
-  - conda-forge::python>=3.9
-  - bioconda::snakemake
   - pytorch::pytorch
   - pytorch::torchvision
-  - nvidia::cudatoolkit=11.3
-  - pip
+  - nvidia::cudatoolkit
   - dask
   - distributed
+  - bioconda::snakemake
   - pip:
-    - DeepForest
-    - pytest
-    - comet_ml
+    - deepforest
+    - pandas
+    - geopandas
     - dask_jobqueue
-    - rio-mbtiles
-    - mapboxcli
+    - panoptescli
+    - comet_ml
+    - paramiko
     - panoptes_client
+    - slidingwindow
+    - xmltodict
+    - Panoptes
+    - PyYAML==6.0
+    - shapely
+    - pytest
+    - rasterio
+    - yapf
+    - black
+    - pytest-cov
+    - pytest-xdist
+    - pdoc
+    - rio-mbtiles
