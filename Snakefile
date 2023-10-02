@@ -2,6 +2,8 @@ import glob
 import os
 import tools
 
+configfile: "snakemake_config.yml"
+
 ORTHOMOSAICS = glob_wildcards("/blue/ewhite/everglades/orthomosaics/{year}/{site}/{flight}.tif")
 FLIGHTS = ORTHOMOSAICS.flight
 SITES = ORTHOMOSAICS.site
@@ -98,4 +100,4 @@ rule upload_mapbox:
     output:
         "/blue/ewhite/everglades/mapbox/{year}/{site}/{flight}.mbtiles"
     shell:
-        "python upload_mapbox.py {input}"
+        "python upload_mapbox.py {input} {config[mapbox-param]}"
