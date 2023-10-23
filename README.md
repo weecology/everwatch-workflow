@@ -138,6 +138,12 @@ The shapefile contains the predicted nest polygon, site, date and a unique ident
 
 The existing code steps (3) - (5) is in `upload_mapbox.py`
 
+### Force re-upload to mapbox
+
+If you are updating existing imagery you will need to force it to be updated.
+In `Zooniverse/snakemake_config.yml` change the value for `mapbox-param` to `"--force-upload"`.
+This will overwrite the current imagery on mapbox for all orthos touched by the snakemake run.
+
 # Shiny App
 
 ## Dependencies
