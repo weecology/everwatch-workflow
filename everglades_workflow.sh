@@ -2,7 +2,7 @@
 #SBATCH --job-name=everglades_workflow 
 #SBATCH --mail-user=henrysenyondo@ufl.edu 
 #SBATCH --mail-type=FAIL
-#SBATCH --gpus=a100:4
+#SBATCH --gpus=a100:2
 #SBATCH --cpus-per-task=10
 #SBATCH --mem=200gb
 #SBATCH --time=8:00:00
