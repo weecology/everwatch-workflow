@@ -71,6 +71,11 @@ The environment can be sensitive to the new CUDA version. Its often useful to fi
 rclone sync everglades2021:"Wading Bird 2021/Deliverables/" /orange/ewhite/everglades/2021
 ```
 
+## HiperGator Logs
+
+The logs are located in `/blue/ewhite/everglades/EvergladesTools/logs`
+Checkout the current cronjob in `/blue/ewhite/everglades/EvergladesTools/everglades_workflow.sh`
+
 ## Snakemake Workflow
 
 There is a Snakemake workflow that runs most of (soon all of) the steps for predicting birds, predicting nests, and pushing imagery to mapbox.

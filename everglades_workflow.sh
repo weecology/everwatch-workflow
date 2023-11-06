@@ -7,10 +7,12 @@
 #SBATCH --mem=200gb
 #SBATCH --time=8:00:00
 #SBATCH --partition=gpu
-#SBATCH --output=everglades_workflow.out
-#SBATCH --error=everglades_workflow.err
+#SBATCH --output=/blue/ewhite/everglades/EvergladesTools/logs/everglades_workflow.out
+#SBATCH --error=/blue/ewhite/everglades/EvergladesTools/logs/everglades_workflow.err
 
 echo "INFO: [$(date "+%Y-%m-%d %H:%M:%S")] Starting everglades workflow $(hostname) in $(pwd)"
 
+ml conda
 conda activate EvergladesTools
-srun snakemake --printshellcmds --keep-going --cores 10 --resources gpu=2 --rerun-incomplete
+cd /blue/ewhite/everglades/EvergladesTools/Zooniverse
+snakemake --printshellcmds --keep-going --cores 10 --resources gpu=2 --rerun-incomplete
