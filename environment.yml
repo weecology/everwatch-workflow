@@ -3,6 +3,7 @@ channels:
   - defaults
   - conda-forge
 dependencies:
+  - pip
   - pytorch::pytorch
   - pytorch::torchvision
   - nvidia::cudatoolkit
