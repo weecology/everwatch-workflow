@@ -32,3 +32,4 @@ dependencies:
     - pytest-xdist
     - pdoc
     - rio-mbtiles
+    - boto3

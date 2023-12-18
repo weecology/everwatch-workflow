@@ -1,62 +1,82 @@
 import os
 import requests
+import boto3
+from botocore.exceptions import NoCredentialsError
 import sys
-import subprocess
 import tomli
-import tools
-
-import rasterio as rio
-from rasterio.warp import calculate_default_transform, reproject, Resampling
 
 
-def on_mapbox(flight):
-    """Check if the mbtiles file has already been uploaded to mapbox"""
+class MapboxUploader:
+
+    def __init__(self, access_token, username):
+        self.access_token = access_token
+        self.username = username
+        self.base_url = f"https://api.mapbox.com/uploads/v1/{self.username}"
+
+    def request_s3_credentials(self):
+        credentials_url = f"{self.base_url}/credentials?access_token={self.access_token}"
+        response = requests.post(credentials_url)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            raise Exception(f"Failed to retrieve S3 credentials. Status code: {response.status_code}")
+
+    def upload_to_s3(self, file_path, s3_credentials):
+        s3_client = boto3.client(
+            's3',
+            aws_access_key_id=s3_credentials['accessKeyId'],
+            aws_secret_access_key=s3_credentials['secretAccessKey'],
+            aws_session_token=s3_credentials['sessionToken'],
+            region_name='us-east-1'  # Use the appropriate AWS region
+        )
+        try:
+            s3_client.upload_file(file_path, s3_credentials['bucket'], s3_credentials['key'])
+        except NoCredentialsError:
+            print("Credentials not available.")
+            raise
+
+    def create_upload(self, s3_credentials, tileset_id):
+        upload_url = f"{self.base_url}?access_token={self.access_token}"
+        headers = {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'}
+        data = {"url": s3_credentials['url'], "tileset": f"{self.username}.{tileset_id}"}
+        response = requests.post(upload_url, json=data, headers=headers)
+        if response.status_code == 201:
+            return response.json()
+        else:
+            raise Exception(f"Failed to create upload. Status code: {response.status_code}")
+
+    def retrieve_upload_status(self, upload_id):
+        status_url = f"{self.base_url}/{upload_id}?access_token={self.access_token}"
+        response = requests.get(status_url)
+        if response.status_code in {200, 201}:
+            return response.json()
+        else:
+            raise Exception(f"Failed to retrieve upload status. Status code: {response.status_code}")
+
+
+def get_credentials():
+    """Get credentials from mapbox.ini"""
     with open("/blue/ewhite/everglades/mapbox/mapbox.ini", "rb") as f:
         toml_dict = tomli.load(f)
-        token = toml_dict['mapbox']['access-token']
-    api_base_url = "https://api.mapbox.com/v4"
-    tileset_id = f"bweinstein.{flight}"
-    url = f"{api_base_url}/{tileset_id}.json?access_token={token}"
-    response = requests.get(url)
-    return response.status_code == 200
-
-
-def upload(path, year, site, force_upload=False):
-    # Create output filename
-    basename = os.path.splitext(os.path.basename(path))[0]
-    flight = basename.replace("_projected", "")
-    if tools.get_event(basename) == "primary":
-        # If from the primary flight strip any extra metadata from filename
-        flight = "_".join(basename.split('_')[0:4])
-    mbtiles_dir = os.path.join("/blue/ewhite/everglades/mapbox/", year, site)
-    if not os.path.exists(mbtiles_dir):
-        os.makedirs(mbtiles_dir)
-    mbtiles_filename = os.path.join(mbtiles_dir, f"{flight}.mbtiles")
-
-    # Generate tiles
-    print("Creating mbtiles file")
-    subprocess.run([
-        "rio", "mbtiles", path, "-o", mbtiles_filename, "--zoom-levels", "17..24", "-j", "4", "-f", "PNG",
-        "--progress-bar"
-    ])
-
-    # Upload to mapbox
-    print("Uploading to mapbox")
-    if force_upload or not on_mapbox(flight):
-        subprocess.run(["mapbox", "upload", f"bweinstein.{flight}", mbtiles_filename])
-    else:
-        print(f"{flight} is already on Mapbox, not uploading. To force reupload use --force-upload")
-
-    return mbtiles_filename
+        access_token = toml_dict['mapbox']['access-token']
+    return access_token
 
 
 if __name__ == "__main__":
-    path = sys.argv[1]
-    split_path = os.path.normpath(path).split(os.path.sep)
-    year = split_path[6]
-    site = split_path[7]
-    if len(sys.argv) == 3 and sys.argv[2] == "--force-upload":
-        force_upload = True
-    else:
-        force_upload = False
-    upload(path, year, site, force_upload=force_upload)
+    file_path = sys.argv[1]
+    access_token = get_credentials()
+    username = 'bweinstein'
+    uploader = MapboxUploader(access_token, username)
+    # Step 1: Request S3 credentials
+    s3_credentials = uploader.request_s3_credentials()
+
+    # Step 2: Upload to Mapbox's S3 staging bucket
+    uploader.upload_to_s3(file_path, s3_credentials)
+    filename_without_extension = os.path.splitext(os.path.basename(file_path))[0]
+    tileset_id = filename_without_extension
+
+    # Step 3: Create an upload to matbox
+    upload_data = uploader.create_upload(s3_credentials, tileset_id)
+    upload_id = upload_data['id']
+    upload_status = uploader.retrieve_upload_status(upload_id)
+    print(f"Upload status: {upload_status}")
