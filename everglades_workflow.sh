@@ -12,7 +12,7 @@
 
 echo "INFO: [$(date "+%Y-%m-%d %H:%M:%S")] Starting everglades workflow $(hostname) in $(pwd)"
 
-ml conda
+module load conda
 conda activate EvergladesTools
 cd /blue/ewhite/everglades/EvergladesTools/Zooniverse
 snakemake --printshellcmds --keep-going --cores 10 --resources gpu=2 --rerun-incomplete
