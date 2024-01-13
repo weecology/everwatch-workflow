@@ -94,10 +94,16 @@ rule combine_nests:
     shell:
         "python combine_nests.py {input}"
 
-rule upload_mapbox:
+rule create_mbtile:
     input:
         "/blue/ewhite/everglades/projected_mosaics/webmercator/{year}/{site}/{flight}_projected.tif"
     output:
         "/blue/ewhite/everglades/mapbox/{year}/{site}/{flight}.mbtiles"
     shell:
-        "python upload_mapbox.py {input} {config[mapbox-param]}"
+        "python mbtile.py.py {input} {config[mapbox-param]}"
+
+rule upload_mapbox:
+    input:
+        "/blue/ewhite/everglades/mapbox/{year}/{site}/{flight}.mbtiles"
+    shell:
+        "python upload_mapbox.py {input}"
