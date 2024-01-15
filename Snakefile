@@ -105,5 +105,7 @@ rule create_mbtile:
 rule upload_mapbox:
     input:
         "/blue/ewhite/everglades/mapbox/{year}/{site}/{flight}.mbtiles"
+    output:
+        "/blue/ewhite/everglades/mapbox/{year}/{site}/{flight}.mbtiles"
     shell:
         "python upload_mapbox.py {input}"
