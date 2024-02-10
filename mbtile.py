@@ -22,8 +22,11 @@ def create_mbtile(path, year, site, force_upload=False):
 
     mbtiles_filename = os.path.join(mbtiles_dir, f"{flight}.mbtiles")
 
+    if os.path.exists(mbtiles_filename):
+        os.remove(mbtiles_filename)
+
     print("Creating mbtiles file")
-    rio_command = f"rio mbtiles {path} -o {mbtiles_filename} --zoom-levels 17..24 -j 4 -f PNG --overwrite"
+    rio_command = f"rio mbtiles {path} -o {mbtiles_filename} --zoom-levels 17..24 -j 4 -f PNG --progress-bar"
 
     rio_command_list = shlex.split(rio_command)
     return_code = subprocess.call(rio_command_list)
