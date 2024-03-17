@@ -50,7 +50,7 @@ def run(proj_tile_path, checkpoint_path, savedir="."):
 
     # create the model and load the weights for the fitted model
     checkpoint = torch.load(checkpoint_path, map_location="cpu")  # map_location is necessary for successful load
-    
+
     model = main.deepforest(num_classes=len(label_dict), label_dict=label_dict)
     model.create_trainer(enable_progress_bar=False)
     model.load_state_dict(checkpoint["state_dict"])
