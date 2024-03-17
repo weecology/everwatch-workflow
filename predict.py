@@ -50,8 +50,9 @@ def run(proj_tile_path, checkpoint_path, savedir="."):
 
     # create the model and load the weights for the fitted model
     checkpoint = torch.load(checkpoint_path, map_location="cpu")  # map_location is necessary for successful load
+    
     model = main.deepforest(num_classes=len(label_dict), label_dict=label_dict)
-    model.to("cuda")
+    model.create_trainer(enable_progress_bar=False)
     model.load_state_dict(checkpoint["state_dict"])
 
     boxes = model.predict_tile(raster_path=proj_tile_path, patch_overlap=0, patch_size=1500)
@@ -74,5 +75,9 @@ if __name__ == "__main__":
     year = split_path[5]
     site = split_path[6]
 
-    savedir = os.path.join("/blue/ewhite/everglades/predictions/", year, site)
+    test_env_name = "TEST_ENV"
+    test_env_set = os.environ.get(test_env_name)
+    working_dir = "/blue/ewhite/everglades_test" if test_env_set else "/blue/ewhite/everglades"
+
+    savedir = os.path.join(working_dir, "predictions", year, site)
     result = run(proj_tile_path=path, checkpoint_path=checkpoint_path, savedir=savedir)

@@ -40,5 +40,11 @@ if __name__ == "__main__":
     split_path = os.path.normpath(paths[0]).split(os.path.sep)
     year = split_path[5]
     site = split_path[6]
-    savedir = os.path.join("/blue/ewhite/everglades/predictions/", year, site)
+
+    # Check if the test environment variable exists
+    test_env_name = "TEST_ENV"
+    test_env_set = os.environ.get(test_env_name)
+    working_dir = "/blue/ewhite/everglades_test" if test_env_set else "/blue/ewhite/everglades"
+
+    savedir = os.path.join(working_dir, "predictions", year, site)
     combine_files(paths, year, site, score_thresh, savedir=savedir)

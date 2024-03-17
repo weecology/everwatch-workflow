@@ -52,8 +52,13 @@ def combine(paths):
 
 
 if __name__ == "__main__":
-    nests_path = "/blue/ewhite/everglades/processed_nests/"
-    output_path = "/blue/ewhite/everglades/EvergladesTools/App/Zooniverse/data/"
+    # Check if the test environment variable exists
+    test_env_name = "TEST_ENV"
+    test_env_set = os.environ.get(test_env_name)
+    working_dir = "/blue/ewhite/everglades_test" if test_env_set else "/blue/ewhite/everglades"
+
+    nests_path = f"{working_dir}/processed_nests/"
+    output_path = f"{working_dir}/EvergladesTools/App/Zooniverse/data/"
 
     nest_files = sys.argv[1:]
     # write output to zooniverse app
@@ -61,7 +66,7 @@ if __name__ == "__main__":
     df.to_file(os.path.join(output_path, "nest_detections_processed.shp"))
 
     # Zip the shapefile for storage efficiency
-    with ZipFile("../App/Zooniverse/data/nest_detections_processed.zip", 'w', ZIP_DEFLATED) as zip:
+    with ZipFile(os.path.join(output_path, "nest_detections_processed.zip"), 'w', ZIP_DEFLATED) as zip:
         for ext in ['cpg', 'dbf', 'prj', 'shp', 'shx']:
             focal_file = os.path.join(output_path, f"nest_detections_processed.{ext}")
             file_name = os.path.basename(focal_file)

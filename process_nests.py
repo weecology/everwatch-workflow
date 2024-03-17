@@ -105,9 +105,14 @@ def process_nests(nest_file, year, site, savedir, min_score=0.3, min_detections=
 
 
 if __name__ == "__main__":
+    # Check if the test environment variable exists
+    test_env_name = "TEST_ENV"
+    test_env_set = os.environ.get(test_env_name)
+    working_dir = "/blue/ewhite/everglades_test" if test_env_set else "/blue/ewhite/everglades"
+
     path = sys.argv[1]
     split_path = os.path.normpath(path).split(os.path.sep)
     year = split_path[5]
     site = split_path[6]
-    nestdir = os.path.join("/blue/ewhite/everglades/processed_nests/", year, site)
+    nestdir = os.path.join(working_dir, "processed_nests", year, site)
     process_nests(path, year, site, savedir=nestdir)
