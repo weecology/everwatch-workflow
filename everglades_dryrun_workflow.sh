@@ -4,8 +4,8 @@
 #SBATCH --mail-type=FAIL
 #SBATCH --gpus=a100:4
 #SBATCH --cpus-per-task=5
-#SBATCH --mem=1000gb
-#SBATCH --time=180:00:00
+#SBATCH --mem=200gb
+#SBATCH --time=00:40:00
 #SBATCH --partition=gpu
 #SBATCH --output=/blue/ewhite/everglades/EvergladesTools/logs/everglades_dryrun_workflow.out
 #SBATCH --error=/blue/ewhite/everglades/EvergladesTools/logs/everglades_dryrun_workflow.err
@@ -16,8 +16,6 @@ echo "INFO [$(date "+%Y-%m-%d %H:%M:%S")] Loading required modules"
 source /etc/profile.d/modules.sh
 
 ml conda
-# conda env create --force --file /blue/ewhite/everglades/EvergladesTools/Zooniverse/environment.yml
-
 conda activate EvergladesTools
 export TEST_ENV=True
 

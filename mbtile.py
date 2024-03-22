@@ -15,11 +15,7 @@ def create_mbtile(path, year, site, force_upload=False):
     if tools.get_event(basename) == "primary":
         flight = "_".join(basename.split('_')[0:4])
 
-    # Check if the test environment variable exists
-    test_env_name = "TEST_ENV"
-    test_env_set = os.environ.get(test_env_name)
-    working_dir = "/blue/ewhite/everglades_test" if test_env_set else "/blue/ewhite/everglades"
-
+    working_dir = tools.get_working_dir()
     mbtiles_dir = os.path.join(working_dir, "mapbox", year, site)
     if not os.path.exists(mbtiles_dir):
         os.makedirs(mbtiles_dir)

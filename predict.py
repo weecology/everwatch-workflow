@@ -1,5 +1,6 @@
 import os
 import sys
+import tools
 
 import geopandas
 import pandas as pd
@@ -75,9 +76,6 @@ if __name__ == "__main__":
     year = split_path[5]
     site = split_path[6]
 
-    test_env_name = "TEST_ENV"
-    test_env_set = os.environ.get(test_env_name)
-    working_dir = "/blue/ewhite/everglades_test" if test_env_set else "/blue/ewhite/everglades"
-
+    working_dir = tools.get_working_dir()
     savedir = os.path.join(working_dir, "predictions", year, site)
     result = run(proj_tile_path=path, checkpoint_path=checkpoint_path, savedir=savedir)

@@ -7,6 +7,7 @@ from zipfile import ZipFile
 
 import geopandas
 import pandas as pd
+import tools
 
 
 def get_site(path):
@@ -52,11 +53,7 @@ def combine(paths):
 
 
 if __name__ == "__main__":
-    # Check if the test environment variable exists
-    test_env_name = "TEST_ENV"
-    test_env_set = os.environ.get(test_env_name)
-    working_dir = "/blue/ewhite/everglades_test" if test_env_set else "/blue/ewhite/everglades"
-
+    working_dir = tools.get_working_dir()
     nests_path = f"{working_dir}/processed_nests/"
     output_path = f"{working_dir}/EvergladesTools/App/Zooniverse/data/"
 

@@ -2,6 +2,7 @@ import geopandas
 import pandas as pd
 import sys
 import os
+import tools
 
 
 def count_max_consec_detects(nest_data, date_data):
@@ -105,11 +106,7 @@ def process_nests(nest_file, year, site, savedir, min_score=0.3, min_detections=
 
 
 if __name__ == "__main__":
-    # Check if the test environment variable exists
-    test_env_name = "TEST_ENV"
-    test_env_set = os.environ.get(test_env_name)
-    working_dir = "/blue/ewhite/everglades_test" if test_env_set else "/blue/ewhite/everglades"
-
+    working_dir = tools.get_working_dir()
     path = sys.argv[1]
     split_path = os.path.normpath(path).split(os.path.sep)
     year = split_path[5]

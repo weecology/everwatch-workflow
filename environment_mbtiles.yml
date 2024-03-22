@@ -1,4 +1,4 @@
-name: mbtilesEnv
+name: mbtilesenv
 channels: 
   - defaults
   - conda-forge
