@@ -40,5 +40,7 @@ if __name__ == "__main__":
     split_path = os.path.normpath(paths[0]).split(os.path.sep)
     year = split_path[5]
     site = split_path[6]
-    savedir = os.path.join("/blue/ewhite/everglades/predictions/", year, site)
+
+    working_dir = tools.get_working_dir()
+    savedir = os.path.join(working_dir, "predictions", year, site)
     combine_files(paths, year, site, score_thresh, savedir=savedir)

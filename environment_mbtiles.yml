@@ -1,0 +1,36 @@
+name: mbtilesenv
+channels: 
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - pytorch::pytorch
+  - pytorch::torchvision
+  - nvidia::cudatoolkit
+  - dask
+  - distributed
+  - bioconda::snakemake
+  - pandas
+  - rasterio
+  - geopandas
+  - pip:
+    - deepforest
+    - dask_jobqueue
+    - panoptescli
+    - comet_ml
+    - paramiko
+    - panoptes_client
+    - slidingwindow
+    - xmltodict
+    - Panoptes
+    - PyYAML==6.0
+    - pytest
+    - yapf
+    - black
+    - pytest-cov
+    - pytest-xdist
+    - pdoc
+    - rio-mbtiles
+    - boto3
+    - shapely=1.7.0

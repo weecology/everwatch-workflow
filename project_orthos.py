@@ -1,6 +1,7 @@
 import os
 import sys
 
+import tools
 import rasterio
 from rasterio.warp import calculate_default_transform, reproject, Resampling
 
@@ -40,7 +41,9 @@ if __name__ == "__main__":
     split_path = os.path.normpath(path).split(os.path.sep)
     year = split_path[5]
     site = split_path[6]
+
+    working_dir = tools.get_working_dir()
     # Project into Everglades UTM zone
-    project_raster(path, year, site, dst_crs=32617, savedir="/blue/ewhite/everglades/projected_mosaics/")
+    project_raster(path, year, site, dst_crs=32617, savedir=f"{working_dir}/projected_mosaics/")
     # Project into webmercator for mapbox
-    project_raster(path, year, site, dst_crs=3857, savedir="/blue/ewhite/everglades/projected_mosaics/webmercator/")
+    project_raster(path, year, site, dst_crs=3857, savedir=f"{working_dir}/projected_mosaics/webmercator/")

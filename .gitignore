@@ -16,6 +16,7 @@ App/Zooniverse/data/nest_detections_processed.shp
 App/Zooniverse/data/nest_detections_processed.shx
 Zooniverse/.snakemake/**
 Zooniverse/logs/**
+Zooniverse/lightning_logs
 source_token.txt
 
 # Config files

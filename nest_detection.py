@@ -245,18 +245,11 @@ def extract_nests(filename, rgb_pool, savedir, upload=False):
         subject_set.add(subjects)
 
 
-def find_files():
-    paths = glob.glob("/orange/ewhite/everglades/utm_projected/*.tif")
-    paths = [x for x in paths if not "Cypress" in x]
-    paths = [x for x in paths if not "Joule_05_05_2021" in x]  # Joul 05_05_2021 is current not projected properly
-
-    return paths
-
-
 if __name__ == "__main__":
+    working_dir = tools.get_working_dir()
     path = sys.argv[1]
     split_path = os.path.normpath(path).split(os.path.sep)
     year = split_path[5]
     site = split_path[6]
-    savedir = os.path.join("/blue/ewhite/everglades/detected_nests/", year, site)
+    savedir = os.path.join(working_dir, "detected_nests", year, site)
     detect_nests(path, year, site, savedir=savedir)

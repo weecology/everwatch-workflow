@@ -2,6 +2,7 @@ import geopandas
 import pandas as pd
 import sys
 import os
+import tools
 
 
 def count_max_consec_detects(nest_data, date_data):
@@ -105,9 +106,10 @@ def process_nests(nest_file, year, site, savedir, min_score=0.3, min_detections=
 
 
 if __name__ == "__main__":
+    working_dir = tools.get_working_dir()
     path = sys.argv[1]
     split_path = os.path.normpath(path).split(os.path.sep)
     year = split_path[5]
     site = split_path[6]
-    nestdir = os.path.join("/blue/ewhite/everglades/processed_nests/", year, site)
+    nestdir = os.path.join(working_dir, "processed_nests", year, site)
     process_nests(path, year, site, savedir=nestdir)

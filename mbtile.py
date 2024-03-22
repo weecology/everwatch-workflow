@@ -15,18 +15,17 @@ def create_mbtile(path, year, site, force_upload=False):
     if tools.get_event(basename) == "primary":
         flight = "_".join(basename.split('_')[0:4])
 
-    mbtiles_dir = os.path.join("/blue/ewhite/everglades/mapbox/", year, site)
-
+    working_dir = tools.get_working_dir()
+    mbtiles_dir = os.path.join(working_dir, "mapbox", year, site)
     if not os.path.exists(mbtiles_dir):
         os.makedirs(mbtiles_dir)
 
     mbtiles_filename = os.path.join(mbtiles_dir, f"{flight}.mbtiles")
-
     if os.path.exists(mbtiles_filename):
         os.remove(mbtiles_filename)
 
     print("Creating mbtiles file")
-    rio_command = f"rio mbtiles {path} -o {mbtiles_filename} --zoom-levels 17..24 -j 4 -f PNG --progress-bar"
+    rio_command = f"rio mbtiles {path} -o {mbtiles_filename} --zoom-levels 17..24 -j 4 -f PNG"
 
     rio_command_list = shlex.split(rio_command)
     return_code = subprocess.call(rio_command_list)

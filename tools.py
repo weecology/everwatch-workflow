@@ -42,3 +42,8 @@ def get_year(path):
     date = get_date(path)
     year = date.split('_')[2]
     return year
+
+
+def get_working_dir():
+    test_env_set = os.environ.get("TEST_ENV")
+    return "/blue/ewhite/everglades_test" if test_env_set else "/blue/ewhite/everglades"
