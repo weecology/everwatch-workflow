@@ -3,6 +3,7 @@ channels:
   - defaults
   - conda-forge
 dependencies:
+  - python=3.11
   - pip
   - pytorch::pytorch
   - pytorch::torchvision
@@ -10,10 +11,12 @@ dependencies:
   - dask
   - distributed
   - bioconda::snakemake
+  - pandas
+  - rasterio
+  - geopandas
+  - shapely>=2.0
   - pip:
     - deepforest
-    - pandas
-    - geopandas
     - dask_jobqueue
     - panoptescli
     - comet_ml
@@ -23,9 +26,7 @@ dependencies:
     - xmltodict
     - Panoptes
     - PyYAML==6.0
-    - shapely
     - pytest
-    - rasterio
     - yapf
     - black
     - pytest-cov
@@ -33,3 +34,4 @@ dependencies:
     - pdoc
     - rio-mbtiles
     - boto3
+  
