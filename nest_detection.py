@@ -82,8 +82,8 @@ def compare_site(gdf):
         results = pd.concat(results)
     else:
         results = pd.DataFrame(columns=[
-            'matched_xmin', 'matched_ymin', 'xmax', 'matched_ymax', 'label', 'score', 'Date', 'bird_id', 'target_index',
-            'geometry'
+            'matched_xmin', 'matched_ymin', 'xmax', 'matched_ymax', 'label', 'score', 'image_path', 'Date', 'bird_id',
+            'target_index', 'geometry'
         ])
 
     return results
@@ -108,6 +108,7 @@ def detect_nests(bird_detection_file, year, site, savedir):
             'matched_ymax': 'float',
             'label': 'str',
             'score': 'float',
+            'image_path': 'str',
             'Site': 'str',
             'Date': 'str',
             'Year': 'str',
