@@ -11,37 +11,6 @@ from deepforest import main
 from deepforest.utilities import boxes_to_shapefile
 
 
-def project(raster_path, boxes):
-    """
-    Convert image coordinates into a geospatial object to overlap with input image. 
-    Args:
-        raster_path: path to the raster .tif on disk. Assumed to have a valid spatial projection
-        boxes: a prediction pandas dataframe from deepforest.predict_tile()
-    Returns:
-        a geopandas dataframe with predictions in input projection.
-    """
-    with rasterio.open(raster_path) as dataset:
-        bounds = dataset.bounds
-        pixelSizeX, pixelSizeY = dataset.res
-
-    # subtract origin. Recall that numpy origin is top left! Not bottom left.
-    boxes["xmin"] = (boxes["xmin"] * pixelSizeX) + bounds.left
-    boxes["xmax"] = (boxes["xmax"] * pixelSizeX) + bounds.left
-    boxes["ymin"] = bounds.top - (boxes["ymin"] * pixelSizeY)
-    boxes["ymax"] = bounds.top - (boxes["ymax"] * pixelSizeY)
-
-    # create geometry column
-    boxes['geometry'] = boxes.apply(lambda x: shapely.geometry.box(x.xmin, x.ymin, x.xmax, x.ymax), axis=1)
-
-    # drop unnecessary columns
-    boxes = boxes.drop(columns=['xmin', 'ymin', 'xmax', 'ymax'])
-
-    # Create a GeoDataFrame
-    gdf = geopandas.GeoDataFrame(boxes, geometry='geometry')
-
-    return gdf
-
-
 def run(proj_tile_path, checkpoint_path, savedir="."):
     """Apply trained model to a drone tile"""
 

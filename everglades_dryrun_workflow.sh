@@ -3,7 +3,7 @@
 #SBATCH --mail-user=henrysenyondo@ufl.edu 
 #SBATCH --mail-type=FAIL
 #SBATCH --gpus=a100:1
-#SBATCH --cpus-per-task=10
+#SBATCH --cpus-per-task=3
 #SBATCH --mem=200gb
 #SBATCH --time=01:30:00
 #SBATCH --partition=gpu
@@ -23,5 +23,5 @@ cd /blue/ewhite/everglades/EvergladesTools/Zooniverse
 
 snakemake --unlock
 echo "INFO [$(date "+%Y-%m-%d %H:%M:%S")] Starting Snakemake pipeline"
-snakemake --printshellcmds --keep-going --cores 10 --resources gpu=1 --rerun-incomplete --latency-wait 1 --use-conda
+snakemake --printshellcmds --keep-going --cores 3 --resources gpu=1 --rerun-incomplete --latency-wait 1 --use-conda
 echo "INFO [$(date "+%Y-%m-%d %H:%M:%S")] End"
