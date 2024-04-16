@@ -23,13 +23,19 @@ def get_event(path):
     This function returns "primary" for no event and events with the following values:
     "A", "a", "primary", "PRIMARY", or mixed case versions of "primary"
     """
-    path = os.path.basename(path)
-    regex = re.compile('\\w+_\\d+_\\d+_\\d+_(\\w+)_projected')
-    match = regex.match(path)
-    if match and match.group(1).upper() != "A" and match.group(1).upper() != "PRIMARY":
-        return match.group(1)
+    filename = os.path.basename(path)
+    regex = re.compile(r'\w+_\d+_\d+_\d+_(\w+)_projected')
+    match = regex.match(filename)
+
+    if match:
+        event = match.group(1).upper()
+        if event not in {"A", "PRIMARY"}:
+            return (event, "_" + event)
+        else:
+            return ("primary", "_" + event)
     else:
-        return "primary"
+        return ("primary", "")
+
 
 
 def get_site(path):
