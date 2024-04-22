@@ -37,7 +37,6 @@ def get_event(path):
         return ("primary", "")
 
 
-
 def get_site(path):
     path = os.path.basename(path)
     regex = re.compile("(\\w+)_\\d+_\\d+_\\d+.*_projected")
