@@ -26,7 +26,7 @@ def flights_in_year_site(wildcards):
         flight_path = os.path.join(basepath, year, site, f"{flight}_projected.shp")
         # Assuming there is a tools.get_event function
         event = tools.get_event(flight_path)
-        if site == wildcards.site and year == wildcards.year and event == "primary":
+        if site == wildcards.site and year == wildcards.year and event[0] == "primary":
             flights_in_year_site.append(flight_path)
     return flights_in_year_site
 

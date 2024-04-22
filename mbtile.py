@@ -12,9 +12,6 @@ def create_mbtile(path, year, site, force_upload=False):
     basename = os.path.splitext(os.path.basename(path))[0]
     flight = basename.replace("_projected", "")
 
-    if tools.get_event(basename) == "primary":
-        flight = "_".join(basename.split('_')[0:4])
-
     working_dir = tools.get_working_dir()
     mbtiles_dir = os.path.join(working_dir, "mapbox", year, site)
     if not os.path.exists(mbtiles_dir):

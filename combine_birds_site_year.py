@@ -19,7 +19,7 @@ def combine_files(bird_detection_files, year, site, score_thresh, savedir):
             eventdf["Site"] = tools.get_site(x)
             eventdf["Date"] = tools.get_date(x)
             eventdf["Year"] = tools.get_year(x)
-            eventdf["event"] = tools.get_event(x)
+            eventdf["event"], eventdf["file_postscript"] = tools.get_event(x)
             eventdf = eventdf[eventdf.score > score_thresh]
             df.append(eventdf)
         except IndexError as e:
