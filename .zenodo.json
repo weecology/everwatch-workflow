@@ -28,10 +28,11 @@
     ],
     "keywords": [
       "ecology",
-      "time-series",
-      "long-term",
-      "continuous analysis"
+      "remote sensing",
+      "drone",
+      "birds",
+      "everglades"
     ],
-    "license": "cc-zero",
-    "upload_type": "dataset"
+    "license": "MIT",
+    "upload_type": "software"
   }
