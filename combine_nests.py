@@ -31,8 +31,8 @@ def load_shapefile(x):
         'last_obs': 'str',
         'num_obs': 'int',
         'species': 'str',
-        'sum_top1_s': 'float',
-        'num_obs_to': 'int',
+        'sum_top1': 'float',
+        'num_top1': 'int',
         'bird_match': 'str'
     })
     shp["site"] = get_site(x)
