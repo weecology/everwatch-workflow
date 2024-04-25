@@ -30,11 +30,11 @@ jobs:
       - uses: mamba-org/provision-with-micromamba@v15
         with:
           environment-name: Zooniverse
-          environment-file: Zooniverse/dev_environment.yml
+          environment-file: dev_environment.yml
           python-version: "${{ matrix.python-version }}"
           cache-env: true
           cache-downloads: true
 
       - name: "Run tests"
         run: |
-          yapf -d --recursive ./Zooniverse/ --style=.style.yapf 2>&1
+          yapf -d ./*.py --style=.style.yapf 2>&1
