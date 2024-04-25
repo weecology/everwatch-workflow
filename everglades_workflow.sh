@@ -4,7 +4,7 @@
 #SBATCH --mail-type=FAIL
 #SBATCH --gpus=a100:4
 #SBATCH --cpus-per-task=60
-#SBATCH --mem=1200gb
+#SBATCH --mem=600gb
 #SBATCH --time=80:00:00
 #SBATCH --partition=gpu
 #SBATCH --output=/blue/ewhite/everglades/EvergladesTools/logs/everglades_workflow.out

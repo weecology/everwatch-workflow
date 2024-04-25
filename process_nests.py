@@ -55,13 +55,13 @@ def process_nests(nest_file, year, site, savedir, min_score=0.3, min_detections=
             top_score_data = summed_scores[summed_scores['sum'] == max(summed_scores['sum'])].reset_index()
             nest_info = nest_data.groupby(['Site', 'Year', 'target_ind']).agg({
                 'Date': ['min', 'max', 'count'],
-                'matched_xm': ['mean'],
-                'matched_ym': ['mean'],
-                'xmax': ['mean'],
-                'matched__1': ['mean']
+                'match_xmin': ['mean'],
+                'match_ymin': ['mean'],
+                'match_xmax': ['mean'],
+                'match_ymax': ['mean']
             }).reset_index()
-            xmean = (nest_info['matched_xm']['mean'][0] + nest_info['xmax']['mean']) / 2
-            ymean = (nest_info['matched_ym']['mean'][0] + nest_info['matched__1']['mean']) / 2
+            xmean = (nest_info['match_xmin']['mean'][0] + nest_info['match_xmax']['mean']) / 2
+            ymean = (nest_info['match_ymin']['mean'][0] + nest_info['match_ymax']['mean']) / 2
             bird_match = ",".join([str(x) for x in nest_data["bird_id"]])
             nests.append([
                 target_ind, nest_info['Site'][0], nest_info['Year'][0], xmean[0], ymean[0], nest_info['Date']['min'][0],
@@ -77,7 +77,7 @@ def process_nests(nest_file, year, site, savedir, min_score=0.3, min_detections=
         nests = pd.DataFrame(nests,
                              columns=[
                                  'nest_id', 'Site', 'Year', 'xmean', 'ymean', 'first_obs', 'last_obs', 'num_obs',
-                                 'species', 'sum_top1_score', 'num_obs_top1', 'bird_match'
+                                 'species', 'sum_top1', 'num_top1', 'bird_match'
                              ])
         nests_shp = geopandas.GeoDataFrame(nests, geometry=geopandas.points_from_xy(nests.xmean, nests.ymean))
         nests_shp.crs = nests_data.crs
@@ -95,8 +95,8 @@ def process_nests(nest_file, year, site, savedir, min_score=0.3, min_detections=
                 'last_obs': 'str',
                 'num_obs': 'int',
                 'species': 'str',
-                'sum_top1_score': 'float',
-                'num_obs_top1': 'int',
+                'sum_top1': 'float',
+                'num_top1': 'int',
                 'bird_match': 'str'
             }
         }

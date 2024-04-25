@@ -56,7 +56,7 @@ class MapboxUploader:
 
 def get_credentials():
     """Get credentials from mapbox.ini"""
-    with open("/blue/ewhite/everglades/mapbox/mapbox.ini", "rb") as f:
+    with open("/blue/ewhite/everglades/mapbox.ini", "rb") as f:
         toml_dict = tomli.load(f)
         access_token = toml_dict['mapbox']['access-token']
     return access_token

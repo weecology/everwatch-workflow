@@ -68,12 +68,12 @@ def compare_site(gdf):
         # add target info to match
         row = geopandas.GeoDataFrame(pd.DataFrame(row).transpose(), crs=matches.crs)
         matches = geopandas.GeoDataFrame(pd.concat([matches, row], ignore_index=True))
-        matches["target_index"] = index
+        matches["target_ind"] = index
         matches = matches.rename(columns={
-            "xmin": "matched_xmin",
-            "max": "matched_xmax",
-            "ymin": "matched_ymin",
-            "ymax": "matched_ymax"
+            "xmin": "match_xmin",
+            "xmax": "match_xmax",
+            "ymin": "match_ymin",
+            "ymax": "match_ymax"
         })
 
         results.append(matches)
@@ -82,8 +82,8 @@ def compare_site(gdf):
         results = pd.concat(results)
     else:
         results = pd.DataFrame(columns=[
-            'matched_xmin', 'matched_ymin', 'xmax', 'matched_ymax', 'label', 'score', 'image_path', 'Date', 'bird_id',
-            'target_index', 'geometry'
+            'match_xmin', 'match_ymin', 'match_xmax', 'match_ymax', 'label', 'score', 'image_path', 'Site', 'Date',
+            'Year', 'event', 'file_posts', 'bird_id', 'target_ind'
         ])
 
     return results
@@ -102,19 +102,20 @@ def detect_nests(bird_detection_file, year, site, savedir):
     schema = {
         "geometry": "Polygon",
         "properties": {
-            'matched_xmin': 'float',
-            'matched_ymin': 'float',
-            'xmax': 'float',
-            'matched_ymax': 'float',
+            'match_xmin': 'float',
+            'match_ymin': 'float',
+            'match_xmax': 'float',
+            'match_ymax': 'float',
             'label': 'str',
             'score': 'float',
             'image_path': 'str',
             'Site': 'str',
             'Date': 'str',
             'Year': 'str',
-            'bird_id': 'int',
             'event': 'str',
-            'target_index': 'int'
+            'file_posts': 'str',
+            'bird_id': 'int',
+            'target_ind': 'int'
         }
     }
     if not results.empty:

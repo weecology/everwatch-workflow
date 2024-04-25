@@ -38,7 +38,7 @@ rule all:
                zip, site=SITES, year=YEARS, flight=FLIGHTS),
         expand(f"{working_dir}/processed_nests/{{year}}/{{site}}/{{site}}_{{year}}_processed_nests.shp",
                zip, site=SITES, year=YEARS),
-        expand(f"{working_dir}/mapbox/{{year}}/{{site}}/{{flight}}.mbtiles",
+        expand(f"{working_dir}/mapbox/last_uploaded/{{year}}/{{site}}/{{flight}}.mbtiles",
                zip, site=SITES, year=YEARS, flight=FLIGHTS)
 
 
@@ -131,7 +131,7 @@ rule upload_mapbox:
     input:
         f"{working_dir}/mapbox/{{year}}/{{site}}/{{flight}}.mbtiles"
     output:
-        f"{working_dir}/mapbox/{{year}}/{{site}}/{{flight}}.mbtiles"
+        touch(f"{working_dir}/mapbox/last_uploaded/{{year}}/{{site}}/{{flight}}.mbtiles")
     conda:
         "EvergladesTools"
     shell:
