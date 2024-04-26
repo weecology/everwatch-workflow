@@ -75,6 +75,8 @@ if __name__ == "__main__":
     filename_without_extension = os.path.splitext(os.path.basename(file_path))[0]
     tileset_id = filename_without_extension
 
+    if len(tileset_id) >= 32:
+        raise Exception(f"Length of {tileset_id} is more than or at the limit of 32")
     # Step 3: Create an upload to matbox
     upload_data = uploader.create_upload(s3_credentials, tileset_id)
     upload_id = upload_data['id']
