@@ -1,5 +1,6 @@
 import os
 import sys
+import shutil
 from zipfile import ZIP_DEFLATED
 from zipfile import ZipFile
 import geopandas
@@ -19,7 +20,7 @@ def combine(paths):
 if __name__ == "__main__":
     working_dir = tools.get_working_dir()
     predictions_path = f"{working_dir}/predictions/"
-    output_path = f"{working_dir}/EvergladesTools/App/Zooniverse/data"
+    output_path = f"{working_dir}/everwatch-workflow/App/Zooniverse/data"
     output_zip = os.path.join(output_path, "PredictedBirds.zip")
 
     predictions = sys.argv[1:]
