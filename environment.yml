@@ -1,4 +1,4 @@
-name: EvergladesTools
+name: everwatch
 channels: 
   - defaults
   - conda-forge

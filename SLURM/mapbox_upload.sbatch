@@ -12,5 +12,5 @@
 
 conda activate DeepTreeAttention
 
-cd /home/b.weinstein/EvergladesTools/Zooniverse
+cd /home/b.weinstein/everwatch-workflow
 python upload_mapbox.py

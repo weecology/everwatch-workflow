@@ -69,5 +69,5 @@ The output shapefiles for (4) contain the predicted nest polygon, site, date and
 
 ## Logs
 
-The logs are located in `/blue/ewhite/everglades/EvergladesTools/logs`
-Checkout the current cronjob in `/blue/ewhite/everglades/EvergladesTools/everglades_workflow.sh`
+The logs are located in `/blue/ewhite/everglades/everwatch-workflow/logs`
+Checkout the current cronjob in `/blue/ewhite/everglades/everwatch-workflow/everglades_workflow.sh`

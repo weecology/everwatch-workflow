@@ -2,7 +2,7 @@ import glob
 import os
 import tools
 
-configfile: "/blue/ewhite/everglades/EvergladesTools/snakemake_config.yml"
+configfile: "/blue/ewhite/everglades/everwatch-workflow/snakemake_config.yml"
 
 # Check if the test environment variable exists
 test_env_name = "TEST_ENV"
@@ -32,8 +32,8 @@ def flights_in_year_site(wildcards):
 
 rule all:
     input:
-        f"{working_dir}/EvergladesTools/App/Zooniverse/data/PredictedBirds.zip",
-        f"{working_dir}/EvergladesTools/App/Zooniverse/data/nest_detections_processed.zip",
+        f"{working_dir}/everwatch-workflow/App/Zooniverse/data/PredictedBirds.zip",
+        f"{working_dir}/everwatch-workflow/App/Zooniverse/data/nest_detections_processed.zip",
         expand(f"{working_dir}/predictions/{{year}}/{{site}}/{{flight}}_projected.shp",
                zip, site=SITES, year=YEARS, flight=FLIGHTS),
         expand(f"{working_dir}/processed_nests/{{year}}/{{site}}/{{site}}_{{year}}_processed_nests.shp",
@@ -49,7 +49,7 @@ rule project_mosaics:
         projected=f"{working_dir}/projected_mosaics/{{year}}/{{site}}/{{flight}}_projected.tif",
         webmercator=f"{working_dir}/projected_mosaics/webmercator/{{year}}/{{site}}/{{flight}}_projected.tif"
     conda:
-        "EvergladesTools"
+        "everwatch"
     shell:
         "python project_orthos.py {input.orthomosaic}"
 
@@ -59,7 +59,7 @@ rule predict_birds:
     output:
         f"{working_dir}/predictions/{{year}}/{{site}}/{{flight}}_projected.shp"
     conda:
-        "EvergladesTools"
+        "everwatch"
     resources:
         gpu=1
     shell:
@@ -71,7 +71,7 @@ rule combine_birds_site_year:
     output:
         f"{working_dir}/predictions/{{year}}/{{site}}/{{site}}_{{year}}_combined.shp"
     conda:
-        "EvergladesTools"
+        "everwatch"
     shell:
         "python combine_birds_site_year.py {input}"
 
@@ -80,9 +80,9 @@ rule combine_predicted_birds:
         expand(f"{working_dir}/predictions/{{year}}/{{site}}/{{site}}_{{year}}_combined.shp",
                zip, site=SITES_SY, year=YEARS_SY)
     output:
-        f"{working_dir}/EvergladesTools/App/Zooniverse/data/PredictedBirds.zip"
+        f"{working_dir}/everwatch-workflow/App/Zooniverse/data/PredictedBirds.zip"
     conda:
-        "EvergladesTools"
+        "everwatch"
     shell:
         "python combine_bird_predictions.py {input}"
 
@@ -92,7 +92,7 @@ rule detect_nests:
     output:
         f"{working_dir}/detected_nests/{{year}}/{{site}}/{{site}}_{{year}}_detected_nests.shp"
     conda:
-        "EvergladesTools"
+        "everwatch"
     shell:
         "python nest_detection.py {input}"
 
@@ -102,7 +102,7 @@ rule process_nests:
     output:
         f"{working_dir}/processed_nests/{{year}}/{{site}}/{{site}}_{{year}}_processed_nests.shp"
     conda:
-        "EvergladesTools"
+        "everwatch"
     shell:
         "python process_nests.py {input}"
 
@@ -111,9 +111,9 @@ rule combine_nests:
         expand(f"{working_dir}/processed_nests/{{year}}/{{site}}/{{site}}_{{year}}_processed_nests.shp",
                zip, site=SITES_SY, year=YEARS_SY)
     output:
-        f"{working_dir}/EvergladesTools/App/Zooniverse/data/nest_detections_processed.zip"
+        f"{working_dir}/everwatch-workflow/App/Zooniverse/data/nest_detections_processed.zip"
     conda:
-        "EvergladesTools"
+        "everwatch"
     shell:
         "python combine_nests.py {input}"
 
@@ -133,6 +133,6 @@ rule upload_mapbox:
     output:
         touch(f"{working_dir}/mapbox/last_uploaded/{{year}}/{{site}}/{{flight}}.mbtiles")
     conda:
-        "EvergladesTools"
+        "everwatch"
     shell:
         "python upload_mapbox.py {input}"

@@ -19,7 +19,7 @@ def combine(paths):
 if __name__ == "__main__":
     working_dir = tools.get_working_dir()
     predictions_path = f"{working_dir}/predictions/"
-    output_path = f"{working_dir}/EvergladesTools/App/Zooniverse/data"
+    output_path = f"{working_dir}/everwatch-workflow/App/Zooniverse/data"
 
     predictions = sys.argv[1:]
     # write output to zooniverse app
