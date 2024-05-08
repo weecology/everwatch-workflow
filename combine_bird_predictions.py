@@ -20,6 +20,7 @@ if __name__ == "__main__":
     working_dir = tools.get_working_dir()
     predictions_path = f"{working_dir}/predictions/"
     output_path = f"{working_dir}/EvergladesTools/App/Zooniverse/data"
+    output_zip = os.path.join(output_path, "PredictedBirds.zip")
 
     predictions = sys.argv[1:]
     # write output to zooniverse app
@@ -27,9 +28,21 @@ if __name__ == "__main__":
     df.to_file(os.path.join(output_path, "PredictedBirds.shp"))
 
     # Zip the shapefile for storage efficiency
-    with ZipFile(os.path.join(output_path, "PredictedBirds.zip"), 'w', ZIP_DEFLATED) as zip:
+    with ZipFile(output_zip, 'w', ZIP_DEFLATED) as zip:
         for ext in ['cpg', 'dbf', 'prj', 'shp', 'shx']:
             focal_file = os.path.join(output_path, f"PredictedBirds.{ext}")
             file_name = os.path.basename(focal_file)
             zip.write(focal_file, arcname=file_name)
             os.remove(focal_file)
+
+    # Copy PredictedBirds.zip to everglades-forecast-web repo
+    dest_path = "/blue/ewhite/everglades/everglades-forecast-web/data"
+    if not os.path.exists(dest_path):
+        os.makedirs(dest_path)
+    dest_file = os.path.join(dest_path, "PredictedBirds.zip")
+
+    if os.path.exists(output_zip):
+        shutil.copy(output_zip, dest_file)
+        print(f"{output_zip} copied to {dest_file}.")
+    else:
+        print("{output_zip} file does not exist.")

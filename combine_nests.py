@@ -55,7 +55,7 @@ def combine(paths):
 if __name__ == "__main__":
     working_dir = tools.get_working_dir()
     nests_path = f"{working_dir}/processed_nests/"
-    output_path = f"{working_dir}/EvergladesTools/App/Zooniverse/data/"
+    output_path = f"{working_dir}/everwatch-workflow/App/Zooniverse/data/"
 
     nest_files = sys.argv[1:]
     # write output to zooniverse app

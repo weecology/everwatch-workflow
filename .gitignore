@@ -1,10 +1,11 @@
-*tokens.py
-.snakemake/**
-logs/**
-lightning_logs
 *.DS_Store*
 *.idea*
 *.pytest_cache*
 *__pycache__*
 *_cache*
+*tokens.py
+.snakemake/**
 .vscode/launch.json
+App/Zooniverse/*
+lightning_logs
+logs/**
