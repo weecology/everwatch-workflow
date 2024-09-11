@@ -28,6 +28,11 @@ if __name__ == "__main__":
     df = combine(predictions)
     df.to_file(os.path.join(output_path, "PredictedBirds.shp"))
 
+    # Write output as csv
+    grouped_df = df.groupby(['Site', 'Date', 'label']).size().reset_index(name='count')
+    csv_file_path = os.path.join(output_path, "PredictedBirds.csv")
+    grouped_df.to_csv(csv_file_path, index=False)
+
     # Zip the shapefile for storage efficiency
     with ZipFile(output_zip, 'w', ZIP_DEFLATED) as zip:
         for ext in ['cpg', 'dbf', 'prj', 'shp', 'shx']:
