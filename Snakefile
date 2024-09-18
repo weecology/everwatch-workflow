@@ -34,6 +34,7 @@ rule all:
     input:
         f"{working_dir}/everwatch-workflow/App/Zooniverse/data/PredictedBirds.zip",
         f"{working_dir}/everwatch-workflow/App/Zooniverse/data/nest_detections_processed.zip",
+        f"{working_dir}/everwatch-workflow/App/Zooniverse/data/forecast_web_updated.txt",
         expand(f"{working_dir}/predictions/{{year}}/{{site}}/{{flight}}_projected.shp",
                zip, site=SITES, year=YEARS, flight=FLIGHTS),
         expand(f"{working_dir}/processed_nests/{{year}}/{{site}}/{{site}}_{{year}}_processed_nests.shp",
@@ -136,3 +137,14 @@ rule upload_mapbox:
         "everwatch"
     shell:
         "python upload_mapbox.py {input}"
+
+rule update_everwatch_predictions:
+    input:
+        f"{working_dir}/everwatch-workflow/App/Zooniverse/data/PredictedBirds.zip"
+    output:
+        touch(f"{working_dir}/everwatch-workflow/App/Zooniverse/data/forecast_web_updated.txt")
+    shell:
+        """
+        bash archive_predictions.sh
+        touch {output}
+        """
