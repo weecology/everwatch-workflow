@@ -29,11 +29,11 @@ fi
 
 # Copy the updated PredictedBirds.zip file to the repository
 cp /blue/ewhite/everglades/everwatch-workflow/App/Zooniverse/data/PredictedBirds.zip \
-   /blue/ewhite/everglades/everwatch-predictions/data/PredictedBirds.zip
+   /blue/ewhite/everglades/everwatch-predictions/PredictedBirds.zip
 
 # Copy the updated PredictedBirds.csv file to the repository
 cp /blue/ewhite/everglades/everwatch-workflow/App/Zooniverse/data/PredictedBirds.csv \
-   /blue/ewhite/everglades/everwatch-predictions/data/PredictedBirds.csv
+   /blue/ewhite/everglades/everwatch-predictions/PredictedBirds.csv
 
 # Stage the files, commit with a message including the current date, and push changes
 git add PredictedBirds.zip PredictedBirds.csv
