@@ -6,10 +6,10 @@ date=$(date '+%Y-%m-%d %H:%M:%S')
 # Change directory to the everwatch-predictions
 cd /blue/ewhite/everglades/everwatch-predictions || exit
 
-# Stash any local changes, switch to the main branch, and pull the latest updates
-git stash
+git reset --hard
 git checkout main
-git pull origin main
+git fetch origin main
+git reset --hard origin/main
 
 # Set up the user information for Weecology Deploy Bot
 git config user.email "weecologydeploy@weecology.org"
@@ -38,12 +38,6 @@ cp /blue/ewhite/everglades/everwatch-workflow/App/Zooniverse/data/PredictedBirds
 # Stage the files, commit with a message including the current date, and push changes
 git add PredictedBirds.zip PredictedBirds.csv
 git commit -m "Weecology Deploy Bot $date"
-
-# Uncomment the following line if you intend to push directly to the main branch
-# git push origin main
-
-# Reapply stashed changes, if any
-git stash pop || echo "No stashed changes to apply."
 
 # Set up the deploy remote for the portal-forecasts repository
 git remote remove deploy
