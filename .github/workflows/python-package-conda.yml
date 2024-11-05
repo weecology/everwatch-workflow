@@ -1,4 +1,4 @@
-name: YAPF Google chromium style
+name: YAPF Style Check
 
 on:
   push:
@@ -14,7 +14,8 @@ jobs:
       fail-fast: false
       matrix:
         python-version:
-          - 3.9
+          - "3.12"
+
         os:
           - "ubuntu-latest"
 
@@ -26,15 +27,22 @@ jobs:
         shell: "bash -l {0}"
 
     steps:
-      - uses: actions/checkout@v3
-      - uses: mamba-org/provision-with-micromamba@v15
+      - name: "Checkout code"
+        uses: "actions/checkout@v4"
+
+      - name: Install opencv dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1-mesa-glx libegl1-mesa
+
+      - name: Install Conda environment with Micromamba
+        uses: mamba-org/setup-micromamba@v1
         with:
           environment-name: Zooniverse
           environment-file: dev_environment.yml
-          python-version: "${{ matrix.python-version }}"
           cache-env: true
           cache-downloads: true
 
-      - name: "Run tests"
+      - name: Run YAPF code style check
         run: |
           yapf -d ./*.py --style=.style.yapf 2>&1
