@@ -41,7 +41,7 @@ git commit -m "Weecology Deploy Bot $date"
 
 # Set up the deploy remote for the portal-forecasts repository
 git remote remove deploy
-git remote add deploy https://${GITHUBTOKEN}@github.com/weecology/everwatch-predictions.git
+git remote add deploy https://$GITHUBTOKEN@github.com/weecology/everwatch-predictions.git
 
 # Push the changes to the deploy remote's main branch
 git push --quiet deploy main
