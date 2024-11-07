@@ -10,6 +10,8 @@
 #SBATCH --output=/blue/ewhite/everglades/everwatch-workflow/logs/everglades_workflow.out
 #SBATCH --error=/blue/ewhite/everglades/everwatch-workflow/logs/everglades_workflow.err
 
+source /blue/ewhite/hpc_maintenance/githubdeploytoken.txt
+
 echo "INFO: [$(date "+%Y-%m-%d %H:%M:%S")] Starting everglades workflow on $(hostname) in $(pwd)"
 
 echo "INFO [$(date "+%Y-%m-%d %H:%M:%S")] Loading required modules"
