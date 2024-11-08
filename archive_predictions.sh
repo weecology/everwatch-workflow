@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source /blue/ewhite/hpc_maintenance/githubdeploytoken.txt
+
 # Capture the current date and time for the commit message
 date=$(date '+%Y-%m-%d %H:%M:%S')
 
