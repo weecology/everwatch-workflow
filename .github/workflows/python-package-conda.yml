@@ -2,9 +2,9 @@ name: YAPF Style Check
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   ci:
@@ -33,7 +33,7 @@ jobs:
       - name: Install opencv dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgl1-mesa-glx libegl1-mesa
+          sudo apt-get install -y libgl1 and libglx-mesa0
 
       - name: Install Conda environment with Micromamba
         uses: mamba-org/setup-micromamba@v1
