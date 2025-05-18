@@ -4,7 +4,7 @@
 #SBATCH --mail-type=FAIL
 #SBATCH --gpus=a100:1
 #SBATCH --cpus-per-task=3
-#SBATCH --mem=200gb
+#SBATCH --mem=20gb
 #SBATCH --time=01:30:00
 #SBATCH --partition=gpu
 #SBATCH --output=/blue/ewhite/everglades/everwatch-workflow/logs/everglades_dryrun_workflow.out
