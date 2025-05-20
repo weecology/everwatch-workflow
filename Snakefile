@@ -19,6 +19,8 @@ YEARS = ORTHOMOSAICS.year
 site_year_combos = {*zip(SITES, YEARS)}
 SITES_SY, YEARS_SY = list(zip(*site_year_combos))
 
+threads = 4
+
 def flights_in_year_site(wildcards):
     basepath = f"{working_dir}/predictions"
     flights_in_year_site = []
@@ -49,32 +51,35 @@ rule project_mosaics:
     output:
         projected=f"{working_dir}/projected_mosaics/{{year}}/{{site}}/{{flight}}_projected.tif",
         webmercator=f"{working_dir}/projected_mosaics/webmercator/{{year}}/{{site}}/{{flight}}_projected.tif"
+    threads: threads
     conda:
         "everwatch"
     shell:
-        "python project_orthos.py {input.orthomosaic}"
+        "python project_orthos.py {input.orthomosaic} --threads {threads}"
 
 rule predict_birds:
     input:
         projected=f"{working_dir}/projected_mosaics/{{year}}/{{site}}/{{flight}}_projected.tif"
     output:
         f"{working_dir}/predictions/{{year}}/{{site}}/{{flight}}_projected.shp"
+    threads: threads
     conda:
         "everwatch"
     resources:
         gpu=1
     shell:
-        "python predict.py {input.projected}"
+        "python predict.py {input.projected} --threads {threads}"
 
 rule combine_birds_site_year:
     input:
         flights_in_year_site
     output:
         f"{working_dir}/predictions/{{year}}/{{site}}/{{site}}_{{year}}_combined.shp"
+    threads: threads
     conda:
         "everwatch"
     shell:
-        "python combine_birds_site_year.py {input}"
+        "python combine_birds_site_year.py {input} --threads {threads}"
 
 rule combine_predicted_birds:
     input:
@@ -92,20 +97,22 @@ rule detect_nests:
         f"{working_dir}/predictions/{{year}}/{{site}}/{{site}}_{{year}}_combined.shp"
     output:
         f"{working_dir}/detected_nests/{{year}}/{{site}}/{{site}}_{{year}}_detected_nests.shp"
+    threads: threads
     conda:
         "everwatch"
     shell:
-        "python nest_detection.py {input}"
+        "python nest_detection.py {input} --threads {threads}"
 
 rule process_nests:
     input:
         f"{working_dir}/detected_nests/{{year}}/{{site}}/{{site}}_{{year}}_detected_nests.shp"
     output:
         f"{working_dir}/processed_nests/{{year}}/{{site}}/{{site}}_{{year}}_processed_nests.shp"
+    threads: threads
     conda:
         "everwatch"
     shell:
-        "python process_nests.py {input}"
+        "python process_nests.py {input} --threads {threads}"
 
 rule combine_nests:
     input:
