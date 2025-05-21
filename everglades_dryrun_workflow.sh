@@ -3,8 +3,8 @@
 #SBATCH --mail-user=henrysenyondo@ufl.edu
 #SBATCH --mail-type=FAIL
 #SBATCH --gpus=a100:1
-#SBATCH --cpus-per-task=3
-#SBATCH --mem=20gb
+#SBATCH --cpus-per-task=2
+#SBATCH --mem=60gb
 #SBATCH --time=01:30:00
 #SBATCH --partition=gpu
 #SBATCH --output=/blue/ewhite/everglades/everwatch-workflow/logs/everglades_dryrun_workflow.out
@@ -25,5 +25,5 @@ cd /blue/ewhite/everglades/everwatch-workflow/
 
 snakemake --unlock
 echo "INFO [$(date "+%Y-%m-%d %H:%M:%S")] Starting Snakemake pipeline"
-snakemake --printshellcmds --keep-going --cores 3 --resources gpu=1 --rerun-incomplete --latency-wait 1 --use-conda
+snakemake --printshellcmds --keep-going --cores 4 --resources gpu=1 --rerun-incomplete --latency-wait 1 --use-conda
 echo "INFO [$(date "+%Y-%m-%d %H:%M:%S")] End"

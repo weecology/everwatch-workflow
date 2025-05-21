@@ -55,7 +55,7 @@ rule project_mosaics:
     conda:
         "everwatch"
     shell:
-        "python project_orthos.py {input.orthomosaic} --threads {threads}"
+        "python project_orthos.py {input.orthomosaic}"
 
 rule predict_birds:
     input:
@@ -68,18 +68,17 @@ rule predict_birds:
     resources:
         gpu=1
     shell:
-        "python predict.py {input.projected} --threads {threads}"
+        "python predict.py {input.projected}"
 
 rule combine_birds_site_year:
     input:
         flights_in_year_site
     output:
         f"{working_dir}/predictions/{{year}}/{{site}}/{{site}}_{{year}}_combined.shp"
-    threads: threads
     conda:
         "everwatch"
     shell:
-        "python combine_birds_site_year.py {input} --threads {threads}"
+        "python combine_birds_site_year.py {input}"
 
 rule combine_predicted_birds:
     input:
@@ -101,7 +100,7 @@ rule detect_nests:
     conda:
         "everwatch"
     shell:
-        "python nest_detection.py {input} --threads {threads}"
+        "python nest_detection.py {input}"
 
 rule process_nests:
     input:
@@ -112,7 +111,7 @@ rule process_nests:
     conda:
         "everwatch"
     shell:
-        "python process_nests.py {input} --threads {threads}"
+        "python process_nests.py {input}"
 
 rule combine_nests:
     input:
@@ -130,6 +129,7 @@ rule create_mbtile:
         f"{working_dir}/projected_mosaics/webmercator/{{year}}/{{site}}/{{flight}}_projected.tif"
     output:
         f"{working_dir}/mapbox/{{year}}/{{site}}/{{flight}}.mbtiles"
+    threads: threads
     conda:
         "mbtilesenv"
     shell:
