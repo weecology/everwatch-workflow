@@ -19,6 +19,8 @@ YEARS = ORTHOMOSAICS.year
 site_year_combos = {*zip(SITES, YEARS)}
 SITES_SY, YEARS_SY = list(zip(*site_year_combos))
 
+threads = 4
+
 def flights_in_year_site(wildcards):
     basepath = f"{working_dir}/predictions"
     flights_in_year_site = []
@@ -49,6 +51,7 @@ rule project_mosaics:
     output:
         projected=f"{working_dir}/projected_mosaics/{{year}}/{{site}}/{{flight}}_projected.tif",
         webmercator=f"{working_dir}/projected_mosaics/webmercator/{{year}}/{{site}}/{{flight}}_projected.tif"
+    threads: threads
     conda:
         "everwatch"
     shell:
@@ -59,6 +62,7 @@ rule predict_birds:
         projected=f"{working_dir}/projected_mosaics/{{year}}/{{site}}/{{flight}}_projected.tif"
     output:
         f"{working_dir}/predictions/{{year}}/{{site}}/{{flight}}_projected.shp"
+    threads: threads
     conda:
         "everwatch"
     resources:
@@ -92,6 +96,7 @@ rule detect_nests:
         f"{working_dir}/predictions/{{year}}/{{site}}/{{site}}_{{year}}_combined.shp"
     output:
         f"{working_dir}/detected_nests/{{year}}/{{site}}/{{site}}_{{year}}_detected_nests.shp"
+    threads: threads
     conda:
         "everwatch"
     shell:
@@ -102,6 +107,7 @@ rule process_nests:
         f"{working_dir}/detected_nests/{{year}}/{{site}}/{{site}}_{{year}}_detected_nests.shp"
     output:
         f"{working_dir}/processed_nests/{{year}}/{{site}}/{{site}}_{{year}}_processed_nests.shp"
+    threads: threads
     conda:
         "everwatch"
     shell:
@@ -123,6 +129,7 @@ rule create_mbtile:
         f"{working_dir}/projected_mosaics/webmercator/{{year}}/{{site}}/{{flight}}_projected.tif"
     output:
         f"{working_dir}/mapbox/{{year}}/{{site}}/{{flight}}.mbtiles"
+    threads: threads
     conda:
         "mbtilesenv"
     shell:
