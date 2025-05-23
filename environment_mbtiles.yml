@@ -33,4 +33,4 @@ dependencies:
     - pdoc
     - rio-mbtiles
     - boto3
-    - shapely=1.7.0
+    - shapely==1.7.0
