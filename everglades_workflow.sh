@@ -2,11 +2,11 @@
 #SBATCH --job-name=everglades_workflow 
 #SBATCH --mail-user=henrysenyondo@ufl.edu 
 #SBATCH --mail-type=FAIL
-#SBATCH --gpus=a100:5
 #SBATCH --cpus-per-task=30
 #SBATCH --mem=250gb
+#SBATCH --gpus=5
 #SBATCH --time=100:00:00
-#SBATCH --partition=gpu
+#SBATCH --partition=hpg-b200
 #SBATCH --output=/blue/ewhite/everglades/everwatch-workflow/logs/everglades_workflow.out
 #SBATCH --error=/blue/ewhite/everglades/everwatch-workflow/logs/everglades_workflow.err
 
