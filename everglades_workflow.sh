@@ -4,9 +4,8 @@
 #SBATCH --mail-type=FAIL
 #SBATCH --cpus-per-task=30
 #SBATCH --mem=250gb
-#SBATCH --gpus=5
-#SBATCH --time=100:00:00
-#SBATCH --partition=hpg-b200
+#SBATCH --gpus=2
+#SBATCH --time=60:00:00
 #SBATCH --output=/blue/ewhite/everglades/everwatch-workflow/logs/everglades_workflow.out
 #SBATCH --error=/blue/ewhite/everglades/everwatch-workflow/logs/everglades_workflow.err
 
@@ -19,7 +18,7 @@ source /etc/profile.d/modules.sh
 
 ml conda
 conda activate everwatch
-
+export PYTHONNOUSERSITE=1
 cd /blue/ewhite/everglades/everwatch-workflow/
 
 snakemake --unlock

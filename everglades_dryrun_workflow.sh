@@ -4,7 +4,7 @@
 #SBATCH --mail-type=FAIL
 #SBATCH --cpus-per-task=3
 #SBATCH --mem=20gb
-#SBATCH --time=01:30:00
+#SBATCH --time=03:30:00
 #SBATCH --gpus=1
 #SBATCH --partition=hpg-b200
 #SBATCH --output=/blue/ewhite/everglades/everwatch-workflow/logs/everglades_dryrun_workflow.out
@@ -19,6 +19,8 @@ source /etc/profile.d/modules.sh
 
 ml conda
 conda activate everwatch
+export PYTHONNOUSERSITE=1
+
 export TEST_ENV=True
 
 cd /blue/ewhite/everglades/everwatch-workflow/
