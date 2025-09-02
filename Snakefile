@@ -1,4 +1,3 @@
-import glob
 import os
 import tools
 
@@ -14,6 +13,11 @@ ORTHOMOSAICS = glob_wildcards(f"{working_dir}/orthomosaics/{{year}}/{{site}}/{{f
 FLIGHTS = ORTHOMOSAICS.flight
 SITES = ORTHOMOSAICS.site
 YEARS = ORTHOMOSAICS.year
+
+print("Working directory:", working_dir)
+print("Years:", ORTHOMOSAICS.year)
+print("Sites:", ORTHOMOSAICS.site)
+print("Flights:", ORTHOMOSAICS.flight)
 
 # Extract combinations of SITES and YEARS
 site_year_combos = {*zip(SITES, YEARS)}
@@ -49,8 +53,10 @@ rule project_mosaics:
     output:
         projected=f"{working_dir}/projected_mosaics/{{year}}/{{site}}/{{flight}}_projected.tif",
         webmercator=f"{working_dir}/projected_mosaics/webmercator/{{year}}/{{site}}/{{flight}}_projected.tif"
-    conda:
-        "everwatch"
+    conda: "envs/mbtiles.yml"
+    threads: 2
+    resources:
+        mem_mb=32000
     shell:
         "python project_orthos.py {input.orthomosaic}"
 
@@ -59,10 +65,11 @@ rule predict_birds:
         projected=f"{working_dir}/projected_mosaics/{{year}}/{{site}}/{{flight}}_projected.tif"
     output:
         f"{working_dir}/predictions/{{year}}/{{site}}/{{flight}}_projected.shp"
-    conda:
-        "everwatch"
+    conda: "envs/predict.yml"
+    threads: 1
     resources:
-        gpu=1
+        gpu=1,
+        mem_mb=96000
     shell:
         "python predict.py {input.projected}"
 
@@ -71,8 +78,10 @@ rule combine_birds_site_year:
         flights_in_year_site
     output:
         f"{working_dir}/predictions/{{year}}/{{site}}/{{site}}_{{year}}_combined.shp"
-    conda:
-        "everwatch"
+    conda: "envs/everwatch.yml"
+    threads: 1
+    resources:
+        mem_mb=8000
     shell:
         "python combine_birds_site_year.py {input}"
 
@@ -82,8 +91,10 @@ rule combine_predicted_birds:
                zip, site=SITES_SY, year=YEARS_SY)
     output:
         f"{working_dir}/everwatch-workflow/App/Zooniverse/data/PredictedBirds.zip"
-    conda:
-        "everwatch"
+    conda: "envs/everwatch.yml"
+    threads: 1
+    resources:
+        mem_mb=8000
     shell:
         "python combine_bird_predictions.py {input}"
 
@@ -92,8 +103,10 @@ rule detect_nests:
         f"{working_dir}/predictions/{{year}}/{{site}}/{{site}}_{{year}}_combined.shp"
     output:
         f"{working_dir}/detected_nests/{{year}}/{{site}}/{{site}}_{{year}}_detected_nests.shp"
-    conda:
-        "everwatch"
+    conda: "envs/everwatch.yml"
+    threads: 1
+    resources:
+        mem_mb=16000
     shell:
         "python nest_detection.py {input}"
 
@@ -102,8 +115,10 @@ rule process_nests:
         f"{working_dir}/detected_nests/{{year}}/{{site}}/{{site}}_{{year}}_detected_nests.shp"
     output:
         f"{working_dir}/processed_nests/{{year}}/{{site}}/{{site}}_{{year}}_processed_nests.shp"
-    conda:
-        "everwatch"
+    conda: "envs/everwatch.yml"
+    threads: 1
+    resources:
+        mem_mb=8000
     shell:
         "python process_nests.py {input}"
 
@@ -113,8 +128,10 @@ rule combine_nests:
                zip, site=SITES_SY, year=YEARS_SY)
     output:
         f"{working_dir}/everwatch-workflow/App/Zooniverse/data/nest_detections_processed.zip"
-    conda:
-        "everwatch"
+    conda: "envs/everwatch.yml"
+    threads: 1
+    resources:
+        mem_mb=8000
     shell:
         "python combine_nests.py {input}"
 
@@ -123,8 +140,10 @@ rule create_mbtile:
         f"{working_dir}/projected_mosaics/webmercator/{{year}}/{{site}}/{{flight}}_projected.tif"
     output:
         f"{working_dir}/mapbox/{{year}}/{{site}}/{{flight}}.mbtiles"
-    conda:
-        "mbtilesenv"
+    conda: "envs/mbtiles.yml"
+    threads: 1
+    resources:
+        mem_mb=32000
     shell:
         "python mbtile.py {input} {config[mapbox-param]}"
 
@@ -132,17 +151,25 @@ rule upload_mapbox:
     input:
         f"{working_dir}/mapbox/{{year}}/{{site}}/{{flight}}.mbtiles"
     output:
-        touch(f"{working_dir}/mapbox/last_uploaded/{{year}}/{{site}}/{{flight}}.mbtiles")
-    conda:
-        "everwatch"
+        f"{working_dir}/mapbox/last_uploaded/{{year}}/{{site}}/{{flight}}.mbtiles"
+    conda: "envs/mbtiles.yml"
+    threads: 1
+    resources:
+        mem_mb=4000
     shell:
-        "python upload_mapbox.py {input}"
+        """
+        python upload_mapbox.py {input}
+        touch {output}
+        """
 
 rule update_everwatch_predictions:
     input:
         f"{working_dir}/everwatch-workflow/App/Zooniverse/data/PredictedBirds.zip"
     output:
-        touch(f"{working_dir}/everwatch-workflow/App/Zooniverse/data/forecast_web_updated.txt")
+        f"{working_dir}/everwatch-workflow/App/Zooniverse/data/forecast_web_updated.txt"
+    threads: 1
+    resources:
+        mem_mb=4000
     shell:
         """
         bash archive_predictions.sh

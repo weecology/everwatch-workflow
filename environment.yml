@@ -1,37 +1,34 @@
 name: everwatch
-channels: 
-  - defaults
+channels:
   - conda-forge
+  - defaults
 dependencies:
   - python=3.11
   - pip
-  - pytorch::pytorch
-  - pytorch::torchvision
-  - nvidia::cudatoolkit
+  - pyyaml
   - dask
   - distributed
-  - bioconda::snakemake
   - pandas
   - rasterio
   - geopandas
   - shapely>=2.0
+  - pytorch::pytorch
+  - pytorch::torchvision
+  - nvidia::cudatoolkit
+  - bioconda::snakemake
+  - opencv
   - pip:
-    - deepforest
-    - dask_jobqueue
-    - panoptescli
-    - comet_ml
-    - paramiko
-    - panoptes_client
-    - slidingwindow
-    - xmltodict
-    - Panoptes
-    - PyYAML==6.0
-    - pytest
-    - yapf
-    - black
-    - pytest-cov
-    - pytest-xdist
-    - pdoc
-    - rio-mbtiles
-    - boto3
-  
+      - git+https://github.com/weecology/DeepForest.git@main
+      - dask_jobqueue
+      - comet_ml
+      - paramiko
+      - slidingwindow
+      - xmltodict
+      - pytest
+      - yapf
+      - black
+      - pytest-cov
+      - pytest-xdist
+      - pdoc
+      - rio-mbtiles
+      - boto3
