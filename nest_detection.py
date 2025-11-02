@@ -96,6 +96,15 @@ def detect_nests(bird_detection_file, year, site, savedir):
         os.makedirs(savedir)
     filename = os.path.join(savedir, f"{site}_{year}_detected_nests.shp")
     df = geopandas.read_file(bird_detection_file)
+    
+    # In some versions of DeepForest, when image coordinates are reprojected
+    # to geographic coordinates the columns storing the bounding box positions
+    # are not updated. This code ensures that the bounding box columns we use
+    # match the properly transformed geometry.
+    df["xmin"] = df.geometry.bounds["minx"]
+    df["ymin"] = df.geometry.bounds["miny"]
+    df["xmax"] = df.geometry.bounds["maxx"]
+    df["ymax"] = df.geometry.bounds["maxy"]
 
     results = compare_site(df)
 
