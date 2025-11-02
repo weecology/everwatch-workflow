@@ -123,11 +123,13 @@ def detect_nests(bird_detection_file, year, site, savedir):
         results["Year"] = year
         result_shp = geopandas.GeoDataFrame(results)
         result_shp.crs = df.crs
-        result_shp.to_file(filename, schema=schema)
+        result_shp.to_file(filename, schema=schema, engine="fiona")
     else:
         crs = df.crs
         empty_results = geopandas.GeoDataFrame(geometry=[])
-        empty_results.to_file(filename, driver='ESRI Shapefile', schema=schema, crs=crs)
+        empty_results.to_file(
+            filename, driver="ESRI Shapefile", schema=schema, crs=crs, engine="fiona"
+        )
 
     return filename
 
