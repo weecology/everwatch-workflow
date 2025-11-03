@@ -49,7 +49,7 @@ rule project_mosaics:
     output:
         projected=f"{working_dir}/projected_mosaics/{{year}}/{{site}}/{{flight}}_projected.tif",
         webmercator=f"{working_dir}/projected_mosaics/webmercator/{{year}}/{{site}}/{{flight}}_projected.tif"
-    conda:
+    uv:
         "everwatch"
     shell:
         "python project_orthos.py {input.orthomosaic}"
@@ -59,7 +59,7 @@ rule predict_birds:
         projected=f"{working_dir}/projected_mosaics/{{year}}/{{site}}/{{flight}}_projected.tif"
     output:
         f"{working_dir}/predictions/{{year}}/{{site}}/{{flight}}_projected.shp"
-    conda:
+    uv:
         "everwatch"
     resources:
         gpu=1
@@ -71,7 +71,7 @@ rule combine_birds_site_year:
         flights_in_year_site
     output:
         f"{working_dir}/predictions/{{year}}/{{site}}/{{site}}_{{year}}_combined.shp"
-    conda:
+    uv:
         "everwatch"
     shell:
         "python combine_birds_site_year.py {input}"
@@ -82,7 +82,7 @@ rule combine_predicted_birds:
                zip, site=SITES_SY, year=YEARS_SY)
     output:
         f"{working_dir}/everwatch-workflow/App/Zooniverse/data/PredictedBirds.zip"
-    conda:
+    uv:
         "everwatch"
     shell:
         "python combine_bird_predictions.py {input}"
@@ -92,7 +92,7 @@ rule detect_nests:
         f"{working_dir}/predictions/{{year}}/{{site}}/{{site}}_{{year}}_combined.shp"
     output:
         f"{working_dir}/detected_nests/{{year}}/{{site}}/{{site}}_{{year}}_detected_nests.shp"
-    conda:
+    uv:
         "everwatch"
     shell:
         "python nest_detection.py {input}"
@@ -102,7 +102,7 @@ rule process_nests:
         f"{working_dir}/detected_nests/{{year}}/{{site}}/{{site}}_{{year}}_detected_nests.shp"
     output:
         f"{working_dir}/processed_nests/{{year}}/{{site}}/{{site}}_{{year}}_processed_nests.shp"
-    conda:
+    uv:
         "everwatch"
     shell:
         "python process_nests.py {input}"
@@ -113,7 +113,7 @@ rule combine_nests:
                zip, site=SITES_SY, year=YEARS_SY)
     output:
         f"{working_dir}/everwatch-workflow/App/Zooniverse/data/nest_detections_processed.zip"
-    conda:
+    uv:
         "everwatch"
     shell:
         "python combine_nests.py {input}"
@@ -123,7 +123,7 @@ rule create_mbtile:
         f"{working_dir}/projected_mosaics/webmercator/{{year}}/{{site}}/{{flight}}_projected.tif"
     output:
         f"{working_dir}/mapbox/{{year}}/{{site}}/{{flight}}.mbtiles"
-    conda:
+    uv:
         "mbtilesenv"
     shell:
         "python mbtile.py {input} {config[mapbox-param]}"
@@ -133,7 +133,7 @@ rule upload_mapbox:
         f"{working_dir}/mapbox/{{year}}/{{site}}/{{flight}}.mbtiles"
     output:
         touch(f"{working_dir}/mapbox/last_uploaded/{{year}}/{{site}}/{{flight}}.mbtiles")
-    conda:
+    uv:
         "everwatch"
     shell:
         "python upload_mapbox.py {input}"

@@ -5,19 +5,20 @@ import tools
 import geopandas
 import pandas as pd
 import rasterio
-import shapely
 import torch
 from deepforest import main
 from deepforest.utilities import boxes_to_shapefile
+import PIL.Image
 
+PIL.Image.MAX_IMAGE_PIXELS = None
 
 def run(proj_tile_path, savedir="."):
     """Apply trained model to a drone tile"""
 
     model = main.deepforest()
-    model.load_model("weecology/everglades-bird-species-detector")
+    #model.load_model("weecology/everglades-bird-species-detector")
 
-    boxes = model.predict_tile(raster_path=proj_tile_path, patch_overlap=0, patch_size=1500)
+    boxes = model.predict_tile(path=proj_tile_path, patch_overlap=0, patch_size=1500)
     proj_tile_dir = os.path.dirname(proj_tile_path)
     projected_boxes = boxes_to_shapefile(boxes, proj_tile_dir)
     if not os.path.exists(savedir):
