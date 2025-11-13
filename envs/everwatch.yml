@@ -1,0 +1,14 @@
+name: everwatch
+channels:
+  - conda-forge
+  - bioconda
+channel_priority: strict
+dependencies:
+  - python=3.12
+  - geopandas
+  - fiona
+  - pyogrio
+  - pandas
+  - shapely
+  - numpy
+  - snakemake
