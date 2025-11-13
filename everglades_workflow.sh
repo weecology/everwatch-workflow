@@ -23,5 +23,15 @@ cd /blue/ewhite/everglades/everwatch-workflow/
 
 snakemake --unlock
 echo "INFO [$(date "+%Y-%m-%d %H:%M:%S")] Starting Snakemake pipeline"
-snakemake --printshellcmds --keep-going --cores 30 --resources gpu=5 --rerun-incomplete --latency-wait 10 --software-deployment-method conda
+snakemake \
+  --printshellcmds \
+  --keep-going \
+  --use-conda \
+  --rerun-incomplete \
+  --latency-wait 10 \
+  --cores 30 \
+  --resources mem_mb=90000 gpu=5
+
+echo ""
+echo "=============================="
 echo "INFO [$(date "+%Y-%m-%d %H:%M:%S")] End"
