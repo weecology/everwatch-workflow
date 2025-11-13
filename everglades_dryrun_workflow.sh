@@ -2,11 +2,10 @@
 #SBATCH --job-name=everwatch_workflow_dryrun
 #SBATCH --mail-user=henrysenyondo@ufl.edu
 #SBATCH --mail-type=FAIL
-#SBATCH --cpus-per-task=3
-#SBATCH --mem=20gb
-#SBATCH --time=03:30:00
+#SBATCH --cpus-per-task=6
+#SBATCH --mem=90gb
+#SBATCH --time=09:30:00
 #SBATCH --gpus=1
-#SBATCH --partition=hpg-b200
 #SBATCH --output=/blue/ewhite/everglades/everwatch-workflow/logs/everglades_dryrun_workflow.out
 #SBATCH --error=/blue/ewhite/everglades/everwatch-workflow/logs/everglades_dryrun_workflow.err
 
@@ -22,10 +21,25 @@ conda activate everwatch
 export PYTHONNOUSERSITE=1
 
 export TEST_ENV=True
+# Guardrails for memory-heavy raster jobs
+export GDAL_CACHEMAX=4096
+export RASTERIO_MAX_DATASET_CACHE=64
+export OMP_NUM_THREADS=1
+export MKL_NUM_THREADS=1
 
 cd /blue/ewhite/everglades/everwatch-workflow/
 
 snakemake --unlock
 echo "INFO [$(date "+%Y-%m-%d %H:%M:%S")] Starting Snakemake pipeline"
-snakemake --printshellcmds --keep-going --cores 3 --resources gpu=1 --rerun-incomplete --latency-wait 1 --use-conda
+snakemake \
+  --printshellcmds \
+  --keep-going \
+  --use-conda \
+  --rerun-incomplete \
+  --latency-wait 10 \
+  --cores 3 \
+  --resources mem_mb=90000 gpu=1
+
+echo ""
+echo "=============================="
 echo "INFO [$(date "+%Y-%m-%d %H:%M:%S")] End"
