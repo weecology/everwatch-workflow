@@ -9,3 +9,4 @@
 App/Zooniverse/*
 lightning_logs
 logs/**
+*core.*
