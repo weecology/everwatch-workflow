@@ -1,0 +1,23 @@
+name: mbtiles
+channels:
+  - conda-forge
+channel_priority: strict
+dependencies:
+  - python=3.10
+  - gdal
+  - geopandas=0.12.2
+  - hdf5
+  - libnetcdf
+  - matplotlib
+  - netcdf4
+  - numpy=1.26.4
+  - pandas
+  - pyogrio=0.10.0
+  - pyproj
+  - rasterio=1.4.3
+  - scipy
+  - pip
+  - pip:
+        - rio-mbtiles
+        - shapely==1.7.0
+        - boto3

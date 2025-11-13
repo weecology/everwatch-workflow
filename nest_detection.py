@@ -96,7 +96,7 @@ def detect_nests(bird_detection_file, year, site, savedir):
         os.makedirs(savedir)
     filename = os.path.join(savedir, f"{site}_{year}_detected_nests.shp")
     df = geopandas.read_file(bird_detection_file)
-    
+
     # In some versions of DeepForest, when image coordinates are reprojected
     # to geographic coordinates the columns storing the bounding box positions
     # are not updated. This code ensures that the bounding box columns we use
@@ -136,9 +136,7 @@ def detect_nests(bird_detection_file, year, site, savedir):
     else:
         crs = df.crs
         empty_results = geopandas.GeoDataFrame(geometry=[])
-        empty_results.to_file(
-            filename, driver="ESRI Shapefile", schema=schema, crs=crs, engine="fiona"
-        )
+        empty_results.to_file(filename, driver="ESRI Shapefile", schema=schema, crs=crs, engine="fiona")
 
     return filename
 
