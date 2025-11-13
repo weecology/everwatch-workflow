@@ -1,0 +1,12 @@
+name: predict
+channels:
+  - conda-forge
+  - bioconda
+channel_priority: strict
+dependencies:
+  - python=3.12
+  - pip
+  - snakemake
+  - mamba
+  - pip:
+      - deepforest @ git+https://github.com/weecology/DeepForest.git@main
