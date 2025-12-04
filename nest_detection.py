@@ -10,24 +10,6 @@ import geopandas
 
 import tools
 
-SCHEMA = {
-    "geometry": "Point",
-    "properties": {
-        "nest_id": "int",
-        "Site": "str",
-        "Year": "str",
-        "xmean": "float",
-        "ymean": "float",
-        "first_obs": "str",
-        "last_obs": "str",
-        "num_obs": "int",
-        "species": "str",
-        "sum_top1": "float",
-        "num_top1": "int",
-        "bird_match": "str",
-    },
-}
-
 
 def calculate_IoUs(geom, match):
     """Calculate intersection-over-union scores for a pair of boxes"""
@@ -91,7 +73,10 @@ def compare_site(gdf):
     if results:
         results = pd.concat(results, ignore_index=True)
     else:
-        results = pd.DataFrame(columns=list(SCHEMA["properties"].keys()))
+        results = pd.DataFrame(columns=[
+            'match_xmin', 'match_ymin', 'match_xmax', 'match_ymax', 'label', 'score', 'image_path', 'Site', 'Date',
+            'Year', 'event', 'file_posts', 'bird_id', 'target_ind'
+        ])
     return results
 
 
@@ -111,6 +96,26 @@ def detect_nests(bird_detection_file, year, site, savedir):
     df["ymax"] = df.geometry.bounds["maxy"]
     results = compare_site(df)
 
+    schema = {
+        "geometry": "Polygon",
+        "properties": {
+            'match_xmin': 'float',
+            'match_ymin': 'float',
+            'match_xmax': 'float',
+            'match_ymax': 'float',
+            'label': 'str',
+            'score': 'float',
+            'image_path': 'str',
+            'Site': 'str',
+            'Date': 'str',
+            'Year': 'str',
+            'event': 'str',
+            'file_posts': 'str',
+            'bird_id': 'int',
+            'target_ind': 'int'
+        }
+    }
+
     gdf_tofile = None
     if not results.empty:
         results["Site"] = site
@@ -120,7 +125,7 @@ def detect_nests(bird_detection_file, year, site, savedir):
     else:
         empty_data = {
             k: pd.Series(dtype="int64" if v == "int" else "float64" if v == "float" else "object")
-            for k, v in SCHEMA["properties"].items()
+            for k, v in schema["properties"].items()
         }
         empty_results = geopandas.GeoDataFrame(
             empty_data,
