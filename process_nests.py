@@ -42,17 +42,51 @@ def count_max_consec_detects(nest_data, date_data):
 
 
 def process_nests(nest_file, year, site, savedir, min_score=0.3, min_detections=3, min_consec_detects=1):
-    """Process nests into a one row per nest table"""
+    """Process nests into a one-row-per-nest table"""
+    SCHEMA = {
+        "geometry": "Point",
+        "properties": {
+            "nest_id": "int",
+            "Site": "str",
+            "Year": "str",
+            "xmean": "float",
+            "ymean": "float",
+            "first_obs": "str",
+            "last_obs": "str",
+            "num_obs": "int",
+            "species": "str",
+            "sum_top1": "float",
+            "num_top1": "int",
+            "bird_match": "str",
+        },
+    }
+
     nests_data = geopandas.read_file(nest_file)
+
+    # Convert numeric columns to correct types if they're strings
+    # (shapefiles sometimes read them as strings)
+    numeric_columns = ['score', 'match_xmin', 'match_xmax', 'match_ymin', 'match_ymax', 'target_ind', 'bird_id']
+    # Only convert columns that exist and are object type
+    cols_to_convert = [
+        col for col in numeric_columns if col in nests_data.columns and nests_data[col].dtype == 'object'
+    ]
+    if cols_to_convert:
+        nests_data[cols_to_convert] = nests_data[cols_to_convert].apply(pd.to_numeric, errors='coerce')
+
+    # Build date_data: single row with all dates for the site-year
     date_data = nests_data.groupby(['Site', 'Year']).agg({'Date': lambda x: x.unique().tolist()}).reset_index()
     target_inds = nests_data['target_ind'].unique()
-    nests = []
+    nests_rows = []
+
     for target_ind in target_inds:
-        nest_data = nests_data[(nests_data['target_ind'] == target_ind) & (nests_data['score'] >= min_score)]
+        nest_data = nests_data[(nests_data["target_ind"] == target_ind) & (nests_data["score"] >= min_score)]
         num_consec_detects = count_max_consec_detects(nest_data, date_data)
+
         if len(nest_data) >= min_detections or num_consec_detects >= min_consec_detects:
+            # Aggregate scores per label and pick the top label by summed score
             summed_scores = nest_data.groupby(['Site', 'Year', 'target_ind', 'label']).score.agg(['sum', 'count'])
             top_score_data = summed_scores[summed_scores['sum'] == max(summed_scores['sum'])].reset_index()
+
             nest_info = nest_data.groupby(['Site', 'Year', 'target_ind']).agg({
                 'Date': ['min', 'max', 'count'],
                 'match_xmin': ['mean'],
@@ -60,49 +94,54 @@ def process_nests(nest_file, year, site, savedir, min_score=0.3, min_detections=
                 'match_xmax': ['mean'],
                 'match_ymax': ['mean']
             }).reset_index()
-            xmean = (nest_info['match_xmin']['mean'][0] + nest_info['match_xmax']['mean']) / 2
-            ymean = (nest_info['match_ymin']['mean'][0] + nest_info['match_ymax']['mean']) / 2
-            bird_match = ",".join([str(x) for x in nest_data["bird_id"]])
-            nests.append([
-                target_ind, nest_info['Site'][0], nest_info['Year'][0], xmean[0], ymean[0], nest_info['Date']['min'][0],
-                nest_info['Date']['max'][0], nest_info['Date']['count'][0], top_score_data['label'][0],
-                top_score_data['sum'][0], top_score_data['count'][0], bird_match
+
+            xmean = (nest_info['match_xmin']['mean'][0] + nest_info['match_xmax']['mean'][0]) / 2
+            ymean = (nest_info['match_ymin']['mean'][0] + nest_info['match_ymax']['mean'][0]) / 2
+
+            nests_rows.append([
+                int(target_ind),
+                str(nest_info['Site'][0]),
+                str(nest_info['Year'][0]),
+                float(xmean),
+                float(ymean),
+                str(nest_info['Date']['min'][0]),
+                str(nest_info['Date']['max'][0]),
+                int(nest_info['Date']['count'][0]),
+                str(top_score_data['label'][0]),
+                float(top_score_data['sum'][0]),
+                int(top_score_data['count'][0]),
+                ",".join(str(x) for x in nest_data["bird_id"]),
             ])
 
-    if not os.path.exists(savedir):
-        os.makedirs(savedir)
+    os.makedirs(savedir, exist_ok=True)
     filename = os.path.join(savedir, f"{site}_{year}_processed_nests.shp")
 
-    if nests:
-        nests = pd.DataFrame(nests,
-                             columns=[
-                                 'nest_id', 'Site', 'Year', 'xmean', 'ymean', 'first_obs', 'last_obs', 'num_obs',
-                                 'species', 'sum_top1', 'num_top1', 'bird_match'
-                             ])
-        nests_shp = geopandas.GeoDataFrame(nests, geometry=geopandas.points_from_xy(nests.xmean, nests.ymean))
-        nests_shp.crs = nests_data.crs
-        nests_shp.to_file(filename)
+    gdf_tofile = None
+    if nests_rows:
+        nests_df = pd.DataFrame(nests_rows, columns=list(SCHEMA["properties"].keys()))
+        nests_gdf = geopandas.GeoDataFrame(
+            nests_df,
+            geometry=geopandas.points_from_xy(nests_df.xmean, nests_df.ymean),
+            crs=nests_data.crs,
+        )
+        gdf_tofile = nests_gdf
     else:
-        schema = {
-            "geometry": "Polygon",
-            "properties": {
-                'nest_id': 'int',
-                'Site': 'str',
-                'Year': 'str',
-                'xmean': 'float',
-                'ymean': 'float',
-                'first_obs': 'str',
-                'last_obs': 'str',
-                'num_obs': 'int',
-                'species': 'str',
-                'sum_top1': 'float',
-                'num_top1': 'int',
-                'bird_match': 'str'
-            }
+        empty_data = {
+            k: pd.Series(dtype="int64" if v == "int" else "float64" if v == "float" else "object")
+            for k, v in SCHEMA["properties"].items()
         }
-        crs = nests_data.crs
-        empty_nests = geopandas.GeoDataFrame(geometry=[])
-        empty_nests.to_file(filename, driver='ESRI Shapefile', schema=schema, crs=crs)
+        empty_gdf = geopandas.GeoDataFrame(
+            empty_data,
+            geometry=geopandas.GeoSeries([], dtype="geometry"),
+            crs=nests_data.crs,
+        )
+        gdf_tofile = empty_gdf
+
+    try:
+        import pyogrio
+        gdf_tofile.to_file(filename, driver="ESRI Shapefile", engine="pyogrio")
+    except ImportError:
+        gdf_tofile.to_file(filename, driver="ESRI Shapefile", engine="fiona")
 
 
 if __name__ == "__main__":

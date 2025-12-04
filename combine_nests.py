@@ -1,4 +1,3 @@
-import glob
 import os
 import re
 import sys
@@ -18,21 +17,20 @@ def get_site(path):
 
 def load_shapefile(x):
     shp = geopandas.read_file(x)
-    # Force correct types
-    # Empty shape files don't see to maintain provided types
-    # when written and loaded
+    # Force correct datatypes
+    # Empty shapefiles don't seem to maintain provided types when written and loaded
     shp = shp.astype({
-        'nest_id': 'int',
+        'nest_id': 'int64',
         'Site': 'str',
         'Year': 'str',
-        'xmean': 'float',
-        'ymean': 'float',
+        'xmean': 'float64',
+        'ymean': 'float64',
         'first_obs': 'str',
         'last_obs': 'str',
-        'num_obs': 'int',
+        'num_obs': 'int64',
         'species': 'str',
-        'sum_top1': 'float',
-        'num_top1': 'int',
+        'sum_top1': 'float64',
+        'num_top1': 'int64',
         'bird_match': 'str'
     })
     shp["site"] = get_site(x)

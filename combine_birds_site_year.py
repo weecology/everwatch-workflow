@@ -29,7 +29,12 @@ def combine_files(bird_detection_files, year, site, score_thresh, savedir):
     df.crs = eventdf.crs
     df = df.assign(bird_id=range(1, len(df) + 1))  # Index bird IDs starting at 1
     filename = os.path.join(savedir, f"{site}_{year}_combined.shp")
-    df.to_file(filename)
+
+    try:
+        import pyogrio
+        df.to_file(filename, driver="ESRI Shapefile", engine="pyogrio")
+    except ImportError:
+        df.to_file(filename, driver="ESRI Shapefile", engine="fiona")
 
     return df
 
