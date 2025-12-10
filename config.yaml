@@ -9,17 +9,24 @@ batch_size: 1
 
 # Model Architecture
 architecture: "retinanet"
-num_classes: 7
+num_classes: 1
 nms_thresh: 0.05
 score_thresh: 0.1
 
 # Set model name to None to initialize from scratch
 model:
-    name: "weecology/deepforest-everglades-bird-species-detector"
+    name: "weecology/deepforest-bird"
     revision: "main"
 
 label_dict:
-    Tree: 0
+    Bird: 0
+    # Great Egret: 0
+    # Snowy Egret: 1
+    # White Ibis: 2
+    # Roseate Spoonbill: 3
+    # Great Blue Heron: 4
+    # Wood Stork: 5
+    # Tricolored Heron: 6
 
 # Pre-processing parameters
 path_to_raster:
