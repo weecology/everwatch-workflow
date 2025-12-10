@@ -33,7 +33,7 @@ def load_shapefile(x):
         'num_top1': 'int64',
         'bird_match': 'str'
     })
-    shp["site"] = get_site(x)
+    #shp["site"] = get_site(x)
     return shp
 
 
@@ -58,7 +58,12 @@ if __name__ == "__main__":
     nest_files = sys.argv[1:]
     # write output to zooniverse app
     df = combine(nest_files)
-    df.to_file(os.path.join(output_path, "nest_detections_processed.shp"))
+    filename = os.path.join(output_path, "nest_detections_processed.shp")
+    try:
+        import pyogrio
+        df.to_file(filename, driver="ESRI Shapefile", engine="pyogrio")
+    except ImportError:
+        df.to_file(filename, driver="ESRI Shapefile", engine="fiona")
 
     # Zip the shapefile for storage efficiency
     with ZipFile(os.path.join(output_path, "nest_detections_processed.zip"), 'w', ZIP_DEFLATED) as zip:
