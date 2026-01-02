@@ -18,8 +18,15 @@ model:
     name: "weecology/deepforest-everglades-bird-species-detector"
     revision: "main"
 
+# Ref https://huggingface.co/weecology/everglades-bird-species-detector/blob/main/config.json
 label_dict:
-    Tree: 0
+    "Great Egret": 0
+    "Roseate Spoonbill": 1
+    "White Ibis": 2
+    "Great Blue Heron": 3
+    "Wood Stork": 4
+    "Snowy Egret": 5
+    "Anhinga": 6
 
 # Pre-processing parameters
 path_to_raster:
