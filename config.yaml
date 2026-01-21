@@ -15,11 +15,10 @@ score_thresh: 0.1
 
 # Set model name to None to initialize from scratch
 model:
-    name: "weecology/deepforest-everglades-bird-species-detector"
+    name: "weecology/everglades-bird-species-detector"
     revision: "main"
 
 label_dict:
-    Tree: 0
 
 # Pre-processing parameters
 path_to_raster:
