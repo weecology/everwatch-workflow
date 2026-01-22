@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=30
 #SBATCH --mem=250gb
 #SBATCH --gpus=2
-#SBATCH --time=60:00:00
+#SBATCH --time=80:00:00
 #SBATCH --output=/blue/ewhite/everglades/everwatch-workflow/logs/everglades_workflow.out
 #SBATCH --error=/blue/ewhite/everglades/everwatch-workflow/logs/everglades_workflow.err
 
