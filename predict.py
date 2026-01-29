@@ -15,10 +15,9 @@ PIL.Image.MAX_IMAGE_PIXELS = None
 
 def run(proj_tile_path, savedir="."):
     """Apply trained model to a drone tile"""
-
-    config_path = os.path.join(os.path.dirname(__file__), "config.yaml")
-    config = load_config(config_path)
-    model = main.deepforest(config=config)
+    model_name = "weecology/everglades-bird-species-detector"
+    model = main.deepforest()
+    model.load_model(model_name=model_name)
 
     boxes = model.predict_tile(path=proj_tile_path, patch_overlap=0, patch_size=1500)
     proj_tile_dir = os.path.dirname(proj_tile_path)
