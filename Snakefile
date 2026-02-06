@@ -54,7 +54,7 @@ rule project_mosaics:
         projected=f"{working_dir}/projected_mosaics/{{year}}/{{site}}/{{flight}}_projected.tif",
         webmercator=f"{working_dir}/projected_mosaics/webmercator/{{year}}/{{site}}/{{flight}}_projected.tif"
     conda: "envs/mbtiles.yml"
-    threads: 2
+    threads: 1
     resources:
         mem_mb=32000
     shell:
@@ -69,7 +69,7 @@ rule predict_birds:
     threads: 1
     resources:
         gpu=1,
-        mem_mb=96000
+        mem_mb=40000
     shell:
         "python predict.py {input.projected}"
 
@@ -106,7 +106,7 @@ rule detect_nests:
     conda: "envs/everwatch.yml"
     threads: 1
     resources:
-        mem_mb=16000
+        mem_mb=8000
     shell:
         "python nest_detection.py {input}"
 

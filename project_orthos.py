@@ -1,40 +1,35 @@
+#!/usr/bin/env python3
 import os
 import sys
-
+from osgeo import gdal
 import tools
-import rasterio
-from rasterio.warp import calculate_default_transform, reproject, Resampling
 
+gdal.UseExceptions()
+gdal.SetConfigOption('GDAL_NUM_THREADS', 'ALL_CPUS')
 
 def project_raster(path, year, site, dst_crs, savedir):
     dest_path = os.path.join(savedir, year, site)
-    if not os.path.exists(dest_path):
-        os.makedirs(dest_path)
+    os.makedirs(dest_path, exist_ok=True)
+
     basename = os.path.basename(os.path.splitext(path)[0])
     dest_name = os.path.join(dest_path, basename + "_projected.tif")
 
-    with rasterio.open(path) as src:
-        transform, width, height = calculate_default_transform(src.crs, dst_crs, src.width, src.height, *src.bounds)
-        kwargs = src.meta.copy()
-        kwargs.update({
-            'crs': rasterio.crs.CRS.from_epsg(dst_crs),
-            'transform': transform,
-            'width': width,
-            'height': height
-        })
+    if os.path.exists(dest_name):
+        gdal.Unlink(dest_name)
 
-        with rasterio.open(dest_name, 'w', **kwargs) as dst:
-            for i in range(1, src.count + 1):
-                reproject(source=rasterio.band(src, i),
-                          destination=rasterio.band(dst, i),
-                          src_transform=src.transform,
-                          src_crs=src.crs,
-                          dst_transform=transform,
-                          dst_crs=dst_crs,
-                          resampling=Resampling.nearest)
+    opts = gdal.WarpOptions(
+        srcSRS='EPSG:4326',
+        dstSRS=f'EPSG:{dst_crs}',
+        resampleAlg='bilinear',
+        multithread=True,
+        creationOptions=['TILED=YES', 'COMPRESS=LZW', 'PREDICTOR=2', 'BIGTIFF=YES']
+    )
+    ds = gdal.Warp(dest_name, path, options=opts)
+    if ds is None:
+        raise RuntimeError(f"GDAL Warp failed for {path} -> {dest_name}")
+    ds = None  # close
 
     return dest_name
-
 
 if __name__ == "__main__":
     path = sys.argv[1]
@@ -43,7 +38,11 @@ if __name__ == "__main__":
     site = split_path[6]
 
     working_dir = tools.get_working_dir()
+
     # Project into Everglades UTM zone
-    project_raster(path, year, site, dst_crs=32617, savedir=f"{working_dir}/projected_mosaics/")
-    # Project into webmercator for mapbox
-    project_raster(path, year, site, dst_crs=3857, savedir=f"{working_dir}/projected_mosaics/webmercator/")
+    out1 = project_raster(path, year, site, dst_crs=32617, savedir=f"{working_dir}/projected_mosaics/")
+    print(f"Wrote: {out1}")
+
+    # Project into Web Mercator for mapbox
+    out2 = project_raster(path, year, site, dst_crs=3857, savedir=f"{working_dir}/projected_mosaics/webmercator/")
+    print(f"Wrote: {out2}")
