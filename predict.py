@@ -19,7 +19,7 @@ def run(proj_tile_path, savedir="."):
     model = main.deepforest()
     model.load_model(model_name=model_name)
 
-    boxes = model.predict_tile(path=proj_tile_path, patch_overlap=0, patch_size=1500)
+    boxes = model.predict_tile(path=proj_tile_path, patch_overlap=0, patch_size=400)
     proj_tile_dir = os.path.dirname(proj_tile_path)
     if boxes is None:
         print(f"No boxes found for {proj_tile_path}")
