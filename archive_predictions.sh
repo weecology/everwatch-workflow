@@ -48,6 +48,9 @@ git remote add deploy https://${GITHUBTOKEN}@github.com/weecology/everwatch-pred
 # Push the changes to the deploy remote's main branch
 git push --quiet deploy main
 
+output_file="/blue/ewhite/everglades/everwatch-workflow/App/Zooniverse/data/forecast_web_updated.txt"
+echo "INFO: [$(date "+%Y-%m-%d %H:%M:%S")] Predictions archived successfully" > $output_file
+
 # Uncomment the following lines if you want to tag the release and push tags
 # git tag $date
 # git push --quiet deploy --tags
