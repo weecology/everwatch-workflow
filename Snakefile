@@ -14,10 +14,6 @@ FLIGHTS = ORTHOMOSAICS.flight
 SITES = ORTHOMOSAICS.site
 YEARS = ORTHOMOSAICS.year
 
-print("Working directory:", working_dir)
-print("Years:", ORTHOMOSAICS.year)
-print("Sites:", ORTHOMOSAICS.site)
-print("Flights:", ORTHOMOSAICS.flight)
 
 # Extract combinations of SITES and YEARS
 site_year_combos = {*zip(SITES, YEARS)}
