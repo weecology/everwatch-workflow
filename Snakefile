@@ -56,7 +56,8 @@ rule project_mosaics:
     conda: "envs/mbtiles.yml"
     threads: 1
     resources:
-        mem_mb=32000
+        mem_mb=32000,
+        project_mosaic_slot=1
     shell:
         "python project_orthos.py {input.orthomosaic}"
 
@@ -69,7 +70,8 @@ rule predict_birds:
     threads: 1
     resources:
         gpu=1,
-        mem_mb=40000
+        mem_mb=40000,
+        predict_birds_slot=1
     shell:
         "python predict.py {input.projected}"
 

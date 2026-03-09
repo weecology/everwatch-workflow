@@ -19,6 +19,13 @@ model:
     revision: "main"
 
 label_dict:
+    Anhinga: 6
+    Great Blue Heron: 3
+    Great Egret: 0
+    Roseate Spoonbill: 1
+    Snowy Egret: 5
+    White Ibis: 2
+    Wood Stork: 4
 
 # Pre-processing parameters
 path_to_raster:
