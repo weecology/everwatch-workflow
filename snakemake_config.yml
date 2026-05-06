@@ -1,1 +1,3 @@
 mapbox-param: ""
+working_dir: "/blue/ewhite/everglades"
+working_dir_test: "/blue/ewhite/everglades_test"
