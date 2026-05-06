@@ -8,16 +8,19 @@ test_env_name = "TEST_ENV"
 test_env_set = os.environ.get(test_env_name)
 working_dir = "/blue/ewhite/everglades_test" if test_env_set else "/blue/ewhite/everglades"
 
-# Define wildcards for orthomosaics
-ORTHOMOSAICS = glob_wildcards(f"{working_dir}/orthomosaics/{{year}}/{{site}}/{{flight}}.tif")
-FLIGHTS = ORTHOMOSAICS.flight
-SITES = ORTHOMOSAICS.site
-YEARS = ORTHOMOSAICS.year
+# Discover flights from raw data; year is the last '_'-delimited token in the folder name
+RAW_DATA = glob_wildcards(f"{working_dir}/open_drone_map/RawData/SkyScoutFlights/{{site}}/{{flight}}")
+FLIGHTS = RAW_DATA.flight
+SITES = RAW_DATA.site
+YEARS = [f.split('_')[-1] for f in FLIGHTS]
 
 
 # Extract combinations of SITES and YEARS
 site_year_combos = {*zip(SITES, YEARS)}
-SITES_SY, YEARS_SY = list(zip(*site_year_combos))
+if site_year_combos:
+    SITES_SY, YEARS_SY = list(zip(*site_year_combos))
+else:
+    SITES_SY, YEARS_SY = [], []
 
 def flights_in_year_site(wildcards):
     basepath = f"{working_dir}/predictions"
@@ -42,6 +45,23 @@ rule all:
         expand(f"{working_dir}/mapbox/last_uploaded/{{year}}/{{site}}/{{flight}}.mbtiles",
                zip, site=SITES, year=YEARS, flight=FLIGHTS)
 
+
+rule create_orthomosaics:
+    input:
+        raw_data_root = f"{working_dir}/open_drone_map/RawData/SkyScoutFlights/{{site}}/{{flight}}"
+    output:
+        orthomosaic = f"{working_dir}/orthomosaics/{{year}}/{{site}}/{{flight}}.tif"
+    params:
+        scratch_dir = f"{working_dir}/open_drone_map/ODM_Processed"
+    wildcard_constraints:
+        year = r"\d{4}"
+    resources:
+        mem_mb = 65536,
+        cpus = 8,
+        gpus = 1,
+        runtime = 720
+    shell:
+        "bash process_ortho.sh {input.raw_data_root} {output.orthomosaic} {params.scratch_dir}"
 
 rule project_mosaics:
     input:
