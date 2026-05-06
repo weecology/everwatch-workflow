@@ -12,3 +12,4 @@ dependencies:
   - shapely
   - numpy
   - snakemake
+  - snakemake-executor-plugin-slurm

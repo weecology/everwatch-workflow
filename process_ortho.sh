@@ -41,7 +41,7 @@ module load cuda
 
 # Run ODM with the target directory as project path
 echo "Running ODM on ${TARGET_DIR}"
-srun apptainer run --nv --bind "${TARGET_DIR}:/project" \
+srun --gpus=1 apptainer run --nv --bind "${TARGET_DIR}:/project" \
     "$ODM_SIF" \
     --project-path /project \
     --max-concurrency 8 \

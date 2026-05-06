@@ -5,7 +5,8 @@ configfile: "/blue/ewhite/everglades/everwatch-workflow/snakemake_config.yml"
 
 # Check if the test environment variable exists
 test_env_name = "TEST_ENV"
-test_env_set = os.environ.get(test_env_name)
+# Hardcode true for the moment while we're testing for safety.
+test_env_set = True
 working_dir = "/blue/ewhite/everglades_test" if test_env_set else "/blue/ewhite/everglades"
 
 # Discover flights from raw data; year is the last '_'-delimited token in the folder name
@@ -52,13 +53,13 @@ rule create_orthomosaics:
     output:
         orthomosaic = f"{working_dir}/orthomosaics/{{year}}/{{site}}/{{flight}}.tif"
     params:
-        scratch_dir = f"{working_dir}/open_drone_map/ODM_Processed"
+        scratch_dir = f"{working_dir}/open_drone_map/ODM_Processed",
+        slurm_extra = "--gpus=1"
     wildcard_constraints:
         year = r"\d{4}"
+    threads: 8
     resources:
         mem_mb = 65536,
-        cpus = 8,
-        gpus = 1,
         runtime = 720
     shell:
         "bash process_ortho.sh {input.raw_data_root} {output.orthomosaic} {params.scratch_dir}"
