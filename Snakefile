@@ -1,5 +1,6 @@
 import os
 import tools
+from pathlib import Path
 
 configfile: "snakemake_config.yml"
 
@@ -10,9 +11,10 @@ test_env_set = True
 working_dir = config["working_dir_test"] if test_env_set else config["working_dir"]
 
 # Discover flights from raw data; year is the last '_'-delimited token in the folder name
-RAW_DATA = glob_wildcards(f"{working_dir}/open_drone_map/RawData/SkyScoutFlights/{{site}}/{{flight}}")
-FLIGHTS = RAW_DATA.flight
-SITES = RAW_DATA.site
+_raw_base = Path(working_dir) / "open_drone_map/RawData/SkyScoutFlights"
+_flight_dirs = sorted(p for p in _raw_base.glob("*/*") if p.is_dir())
+SITES = [p.parent.name for p in _flight_dirs]
+FLIGHTS = [p.name for p in _flight_dirs]
 YEARS = [f.split('_')[-1] for f in FLIGHTS]
 
 
