@@ -59,8 +59,11 @@ for (_s, _y), _ordered in _site_year_flights.items():
 
 
 def _get_reference_ortho(wildcards):
-    """Returns the previous flight for the given input used as reference for alignment"""
-    return f"{working_dir}/orthomosaics/{wildcards.year}/{wildcards.site}/{_prev_flight[wildcards.flight]}.tif"
+    """Returns the previous flight for the given input used as reference for alignment."""
+    prev = _prev_flight[wildcards.flight]
+    if _prev_flight.get(prev) is not None:
+        return f"{working_dir}/orthomosaics/{wildcards.year}/{wildcards.site}/{prev}_aligned.tif"
+    return f"{working_dir}/orthomosaics/{wildcards.year}/{wildcards.site}/{prev}.tif"
 
 def _has_previous_flight(wildcards):
     """Checks if the previous flight exists, e.g. this is the first flight of the season for that site"""
