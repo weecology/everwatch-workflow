@@ -114,7 +114,7 @@ rule create_orthomosaics:
     input:
         raw_data_root=ancient(f"{working_dir}/open_drone_map/RawData/SkyScoutFlights/{{site}}/{{flight}}")
     output:
-        orthomosaic=f"{working_dir}/orthomosaics/{{year}}/{{site}}/{{flight}}.tif"
+        orthomosaic=protected(f"{working_dir}/orthomosaics/{{year}}/{{site}}/{{flight}}.tif")
     log:
         f"{working_dir}/logs/create_orthomosaics/{{year}}/{{site}}/{{flight}}.log"
     conda: "envs/odm.yml"
