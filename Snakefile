@@ -10,7 +10,7 @@ os.environ["TEST_ENV"] = "1"
 
 # Hardcode true for the moment while we're testing for safety.
 test_env_set = True
-working_dir = config["working_dir_test"] if test_env_set else config["working_dir"]
+working_dir = config["working_dir_test"]
 
 # Discover flights from raw data; year is the last '_'-delimited token in the folder name
 _raw_base = Path(working_dir) / "open_drone_map/RawData/SkyScoutFlights"
