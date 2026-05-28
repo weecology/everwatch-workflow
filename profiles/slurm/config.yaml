@@ -3,6 +3,8 @@ latency-wait: 60
 jobs: 20
 keep-going: true
 rerun-incomplete: true
+rerun-triggers:
+  - mtime
 use-conda: true
 printshellcmds: true
 default-resources:
