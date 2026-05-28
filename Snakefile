@@ -80,7 +80,8 @@ def flights_in_year_site(wildcards):
 
 
 wildcard_constraints:
-    year=r"\d{4}"
+    year=r"\d{4}",
+    flight=r".*(?<!_aligned)"
 
 ruleorder: create_orthomosaics > existing_orthomosaic
 
