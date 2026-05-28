@@ -40,7 +40,10 @@ else:
 # Build per-site-year chronological lookup: map each flight to its predecessor
 def _parse_flight_date(flight_name):
     parts = flight_name.split("_")
-    mm, dd, yyyy = int(parts[-3]), int(parts[-2]), int(parts[-1])
+    try:
+        mm, dd, yyyy = int(parts[-3]), int(parts[-2]), int(parts[-1])
+    except (ValueError, IndexError) as e:
+        raise ValueError(f"Cannot parse date from flight name {flight_name!r} (parts={parts}): {e}")
     return _date(yyyy, mm, dd)
 
 _site_year_flights: dict[tuple[str, str], list[str]] = {}
