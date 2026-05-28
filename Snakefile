@@ -112,7 +112,7 @@ rule existing_orthomosaic:
 
 rule create_orthomosaics:
     input:
-        raw_data_root=f"{working_dir}/open_drone_map/RawData/SkyScoutFlights/{{site}}/{{flight}}"
+        raw_data_root=ancient(f"{working_dir}/open_drone_map/RawData/SkyScoutFlights/{{site}}/{{flight}}")
     output:
         orthomosaic=f"{working_dir}/orthomosaics/{{year}}/{{site}}/{{flight}}.tif"
     log:
