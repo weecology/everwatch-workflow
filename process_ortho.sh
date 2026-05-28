@@ -47,6 +47,7 @@ apptainer run --nv --bind "${TARGET_DIR}:/project" \
     --max-concurrency 8 \
     --orthophoto-resolution 2 \
     --optimize-disk-space \
+    --rerun-all \
     --build-overviews \
     --cog
 

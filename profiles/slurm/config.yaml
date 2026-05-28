@@ -1,0 +1,10 @@
+executor: slurm
+latency-wait: 60
+jobs: 20
+keep-going: true
+rerun-incomplete: true
+use-conda: true
+printshellcmds: true
+default-resources:
+  runtime: 60
+  slurm_jobname: "smk.{rule}"

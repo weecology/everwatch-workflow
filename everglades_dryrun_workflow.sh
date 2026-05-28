@@ -19,16 +19,11 @@ export MKL_NUM_THREADS=1
 
 cd /blue/ewhite/everglades/everwatch-workflow/
 
+bash setup_dirs.sh /blue/ewhite/everglades_test
+
 snakemake --unlock
 echo "INFO [$(date "+%Y-%m-%d %H:%M:%S")] Starting Snakemake pipeline"
-snakemake \
-  --executor slurm \
-  --printshellcmds \
-  --keep-going \
-  --use-conda \
-  --rerun-incomplete \
-  --latency-wait 60 \
-  --jobs 20
+snakemake --profile profiles/slurm --dry-run
 
 echo ""
 echo "=============================="
