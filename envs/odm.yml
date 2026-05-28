@@ -1,5 +1,12 @@
 channels:
   - conda-forge
 dependencies:
-  - python>=3.10
-  - uv
+  - python>=3.13
+  - faiss-cpu
+  - matplotlib
+  - opencv
+  - rasterio
+  - tqdm
+  - pip
+  - pip:
+    - /home/veitchmichaelisj/code/orthoalign

@@ -147,13 +147,13 @@ rule align_mosaics:
     shell:
         """
         exec > {log:q} 2>&1
-        uv run ortho_align \
+        orthoalign \
             {input.reference:q} \
             {input.orthomosaic:q} \
-            {params.align_dir:q} \
+            --out-dir {params.align_dir:q} \
             --workers {threads} \
             --cleanup
-        mv {params.align_dir:q}/{wildcards.flight}_aligned_homography.tif \
+        mv {params.align_dir:q}/{wildcards.flight}_aligned_translation.tif \
             {output.aligned:q}
         """
 
