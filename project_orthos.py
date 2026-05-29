@@ -10,7 +10,7 @@ gdal.UseExceptions()
 gdal.SetConfigOption('GDAL_NUM_THREADS', 'ALL_CPUS')
 
 
-def project_raster(path, year, site, dst_crs, savedir, dst_alpha=True):
+def project_raster(path, year, site, dst_crs, savedir, nodata_value=255):
     dest_path = os.path.join(savedir, year, site)
     os.makedirs(dest_path, exist_ok=True)
 
@@ -19,24 +19,24 @@ def project_raster(path, year, site, dst_crs, savedir, dst_alpha=True):
 
     if os.path.exists(dest_name):
         gdal.Unlink(dest_name)
-    warp_kwargs = dict(
+    # Keep RGB only (drop any ODM alpha band) so the output stays 3-band for deepforest
+    src_vrt = gdal.Translate('', path, options=gdal.TranslateOptions(format='VRT', bandList=[1, 2, 3]))
+    for i in range(1, 4):
+        src_vrt.GetRasterBand(i).SetNoDataValue(nodata_value)
+    warp_opts = gdal.WarpOptions(
         dstSRS=f'EPSG:{dst_crs}',
         resampleAlg='bilinear',
         multithread=True,
-        # Use the ODM alpha band as the validity mask (clean edges, no false-masking of valid white pixels)
-        srcAlpha=True,
-        dstAlpha=dst_alpha,
-        warpOptions=['INIT_DEST=NO_DATA'],
+        srcNodata=nodata_value,
+        dstNodata=nodata_value,
+        warpOptions=['INIT_DEST=NO_DATA', 'UNIFIED_SRC_NODATA=YES'],
         creationOptions=['TILED=YES', 'COMPRESS=LZW', 'PREDICTOR=2', 'BIGTIFF=YES', 'BLOCKXSIZE=512', 'BLOCKYSIZE=512'])
-    if not dst_alpha:
-        # deepforest needs 3-band RGB: drop the alpha band and fill masked pixels with 255
-        warp_kwargs['dstNodata'] = 255
-    warp_opts = gdal.WarpOptions(**warp_kwargs)
     print(f"Processing {path} -> {dest_name}", flush=True)
-    ds = gdal.Warp(dest_name, path, options=warp_opts)
+    ds = gdal.Warp(dest_name, src_vrt, options=warp_opts)
     if ds is None:
         raise RuntimeError(f"GDAL Warp failed for {path} -> {dest_name}")
     ds = None
+    src_vrt = None
     return dest_name
 
 
@@ -52,8 +52,7 @@ if __name__ == "__main__":
                               year,
                               site,
                               dst_crs=32617,
-                              savedir=f"{working_dir}/projected_mosaics/",
-                              dst_alpha=False)
+                              savedir=f"{working_dir}/projected_mosaics/")
         print(f"Wrote: {out1}", flush=True)
 
         out2 = project_raster(path,
