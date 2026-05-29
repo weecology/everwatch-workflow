@@ -10,7 +10,7 @@ gdal.UseExceptions()
 gdal.SetConfigOption('GDAL_NUM_THREADS', 'ALL_CPUS')
 
 
-def project_raster(path, year, site, dst_crs, savedir):
+def project_raster(path, year, site, dst_crs, savedir, dst_alpha=True):
     dest_path = os.path.join(savedir, year, site)
     os.makedirs(dest_path, exist_ok=True)
 
@@ -19,15 +19,19 @@ def project_raster(path, year, site, dst_crs, savedir):
 
     if os.path.exists(dest_name):
         gdal.Unlink(dest_name)
-    warp_opts = gdal.WarpOptions(
+    warp_kwargs = dict(
         dstSRS=f'EPSG:{dst_crs}',
         resampleAlg='bilinear',
         multithread=True,
-        # Preserve the ODM alpha band as the output mask rather than using a nodata value
+        # Use the ODM alpha band as the validity mask (clean edges, no false-masking of valid white pixels)
         srcAlpha=True,
-        dstAlpha=True,
+        dstAlpha=dst_alpha,
         warpOptions=['INIT_DEST=NO_DATA'],
         creationOptions=['TILED=YES', 'COMPRESS=LZW', 'PREDICTOR=2', 'BIGTIFF=YES', 'BLOCKXSIZE=512', 'BLOCKYSIZE=512'])
+    if not dst_alpha:
+        # deepforest needs 3-band RGB: drop the alpha band and fill masked pixels with 255
+        warp_kwargs['dstNodata'] = 255
+    warp_opts = gdal.WarpOptions(**warp_kwargs)
     print(f"Processing {path} -> {dest_name}", flush=True)
     ds = gdal.Warp(dest_name, path, options=warp_opts)
     if ds is None:
@@ -48,7 +52,8 @@ if __name__ == "__main__":
                               year,
                               site,
                               dst_crs=32617,
-                              savedir=f"{working_dir}/projected_mosaics/")
+                              savedir=f"{working_dir}/projected_mosaics/",
+                              dst_alpha=False)
         print(f"Wrote: {out1}", flush=True)
 
         out2 = project_raster(path,
