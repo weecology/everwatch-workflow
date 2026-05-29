@@ -2,6 +2,7 @@ executor: slurm
 latency-wait: 60
 jobs: 20
 keep-going: true
+retries: 2
 rerun-incomplete: true
 use-conda: true
 printshellcmds: true
