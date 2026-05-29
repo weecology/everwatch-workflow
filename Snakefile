@@ -1,4 +1,5 @@
 import os
+import re
 import tools
 from datetime import date as _date
 from pathlib import Path
@@ -12,24 +13,35 @@ os.environ["TEST_ENV"] = "1"
 test_env_set = True
 working_dir = config["working_dir_test"]
 
-# Discover flights from raw data; year is the last '_'-delimited token in the folder name
-_raw_base = Path(working_dir) / "open_drone_map/RawData/SkyScoutFlights"
-_flight_dirs = sorted(p for p in _raw_base.glob("*/*") if p.is_dir())
-SITES = [p.parent.name for p in _flight_dirs]
-FLIGHTS = [p.name for p in _flight_dirs]
-YEARS = [f.split('_')[-1] for f in FLIGHTS]
 
-# Look for existing orthos that have no raw data equivalent
-_raw_flights = set(FLIGHTS)
 _ortho_base = Path(working_dir) / "orthomosaics"
+_raw_base = Path(working_dir) / "open_drone_map/RawData/SkyScoutFlights"
+
+SITES = []
+FLIGHTS = []
+YEARS = []
+
+# Discover existing orthomosaics and prefer to not regenerate if possible
 for _tif in sorted(_ortho_base.glob("*/*/*.tif")):
     if "_aligned" in _tif.stem:
         continue
-    _flight = _tif.stem
-    if _flight not in _raw_flights:
-        SITES.append(_tif.parent.name)
-        FLIGHTS.append(_flight)
-        YEARS.append(_tif.parent.parent.name)
+    SITES.append(_tif.parent.name)
+    FLIGHTS.append(_tif.stem)
+    YEARS.append(_tif.parent.parent.name)
+
+EXISTING_ORTHO_FLIGHTS = set(FLIGHTS)
+
+# Raw flights are built only when no ortho exists for them yet.
+CREATE_FLIGHTS = set()
+for _dir in sorted(p for p in _raw_base.glob("*/*") if p.is_dir()):
+    _flight = _dir.name
+    if _flight in EXISTING_ORTHO_FLIGHTS:
+        continue
+    SITES.append(_dir.parent.name)
+    FLIGHTS.append(_flight)
+    YEARS.append(_flight.split("_")[-1])
+    CREATE_FLIGHTS.add(_flight)
+
 # Extract combinations of SITES and YEARS
 site_year_combos = {*zip(SITES, YEARS)}
 if site_year_combos:
@@ -86,7 +98,7 @@ wildcard_constraints:
     year=r"\d{4}",
     flight=r".*(?<!_aligned)"
 
-ruleorder: create_orthomosaics > existing_orthomosaic
+ruleorder: existing_orthomosaic > create_orthomosaics
 
 
 rule all:
@@ -103,18 +115,22 @@ rule all:
 
 
 rule existing_orthomosaic:
-    """No-op for pre-existing orthomosaics that don't need mosaicing."""
+    """No-op for pre-existing orthomosaics"""
     output:
         orthomosaic=f"{working_dir}/orthomosaics/{{year}}/{{site}}/{{flight}}.tif"
+    wildcard_constraints:
+        flight="|".join(sorted(re.escape(f) for f in EXISTING_ORTHO_FLIGHTS)) or "(?!)"
     shell:
         "test -f {output.orthomosaic}"
 
 
 rule create_orthomosaics:
     input:
-        raw_data_root=ancient(f"{working_dir}/open_drone_map/RawData/SkyScoutFlights/{{site}}/{{flight}}")
+        raw_data_root=f"{working_dir}/open_drone_map/RawData/SkyScoutFlights/{{site}}/{{flight}}"
     output:
-        orthomosaic=protected(f"{working_dir}/orthomosaics/{{year}}/{{site}}/{{flight}}.tif")
+        orthomosaic=f"{working_dir}/orthomosaics/{{year}}/{{site}}/{{flight}}.tif"
+    wildcard_constraints:
+        flight="|".join(sorted(re.escape(f) for f in CREATE_FLIGHTS)) or "(?!)"
     log:
         f"{working_dir}/logs/create_orthomosaics/{{year}}/{{site}}/{{flight}}.log"
     conda: "envs/odm.yml"
@@ -166,17 +182,36 @@ rule project_mosaics:
             otherwise=f"{working_dir}/orthomosaics/{{year}}/{{site}}/{{flight}}.tif",
         )
     output:
-        projected=f"{working_dir}/projected_mosaics/{{year}}/{{site}}/{{flight}}_projected.tif",
-        webmercator=f"{working_dir}/projected_mosaics/webmercator/{{year}}/{{site}}/{{flight}}_projected.tif"
+        projected=f"{working_dir}/projected_mosaics/{{year}}/{{site}}/{{flight}}_projected.tif"
     log:
         f"{working_dir}/logs/project_mosaics/{{year}}/{{site}}/{{flight}}.log"
     conda: "envs/mbtiles.yml"
-    threads: 1
+    threads: 12
     resources:
         mem_mb=32000,
         project_mosaic_slot=1
     shell:
-        "python project_orthos.py {input.orthomosaic} > {log} 2>&1"
+        "bash project_ortho.sh {input.orthomosaic:q} {output.projected:q} 32617 -wo NUM_THREADS={threads} > {log:q} 2>&1"
+
+
+rule project_mosaics_webmercator:
+    input:
+        orthomosaic=branch(
+            _has_previous_flight,
+            then=f"{working_dir}/orthomosaics/{{year}}/{{site}}/{{flight}}_aligned.tif",
+            otherwise=f"{working_dir}/orthomosaics/{{year}}/{{site}}/{{flight}}.tif",
+        )
+    output:
+        webmercator=f"{working_dir}/projected_mosaics/webmercator/{{year}}/{{site}}/{{flight}}_projected.tif"
+    log:
+        f"{working_dir}/logs/project_mosaics_webmercator/{{year}}/{{site}}/{{flight}}.log"
+    conda: "envs/mbtiles.yml"
+    threads: 12
+    resources:
+        mem_mb=32000,
+        project_mosaic_slot=1
+    shell:
+        "bash project_ortho.sh {input.orthomosaic:q} {output.webmercator:q} 3857 -wo NUM_THREADS={threads} > {log:q} 2>&1"
 
 
 rule predict_birds:

@@ -37,7 +37,7 @@ snakemake --printshellcmds --keep-going --cores 10 --resources gpu=2 --rerun-inc
 `--cores` is the number of cores and `--resources gpu=` is the number of gpus to be used.
 
 The workflow currently does the following:
-1. Projects all orthomosaics in `/blue/ewhite/everglades/orthomosaics` using `project_orthos.py`
+1. Projects all orthomosaics in `/blue/ewhite/everglades/orthomosaics` using `project_ortho.sh` (UTM for bird detection, web-mercator for mapbox tiles)
 2. Predicts the location and species ID of all birds in each orthomosaic using `predict.py`
 3. Combines all of the predictions into single shapefiles for each site-year combination (`combine_birds_site_year.py`) and then a single combined zipped shapefile (`combine_bird_predictions.py`).
 4. Detects nests based on three or more occurrences of a bird detection at the same location during a single year (`nest_detection.py`), processes this data into a useful format for visualization and analysis (`process_nests.py`), and combines them into a single zipped shapefile (`combine_nests.py`).
