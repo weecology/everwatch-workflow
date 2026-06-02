@@ -9,7 +9,7 @@ source /etc/profile.d/modules.sh
 ml conda
 conda activate everwatch
 export PYTHONNOUSERSITE=1
-export TEST_ENV = 1
+export TEST_ENV=1
 cd /blue/ewhite/everglades/everwatch-workflow/
 
 bash setup_dirs.sh /blue/ewhite/everglades

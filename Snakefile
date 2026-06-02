@@ -28,6 +28,8 @@ for _dir in sorted(p for p in _raw_base.glob("*/*") if p.is_dir()):
     RAW_COMBOS.add((_dir.parent.name, _flight.split("_")[-1], _flight))
 
 ALL_COMBOS = sorted(ARCHIVE_COMBOS | RAW_COMBOS)
+
+# Flights for which we need to run ODM
 BUILD_COMBOS = RAW_COMBOS - ARCHIVE_COMBOS
 
 SITES = [site for site, _, _ in ALL_COMBOS]
@@ -74,6 +76,10 @@ def _has_previous_flight(wildcards):
     return _prev_flight.get(wildcards.flight) is not None
 
 
+def _will_build_orthomosaic(wildcards):
+    return (wildcards.site, wildcards.year, wildcards.flight) in BUILD_COMBOS
+
+
 def flights_in_year_site(wildcards):
     """Discover flights by site and year"""
     basepath = f"{working_dir}/predictions"
@@ -104,6 +110,14 @@ rule all:
                zip, site=SITES, year=YEARS, flight=FLIGHTS)
 
 
+# We create symlinks to a working directory that can be used for subsequent steps.
+# This rule will  call a create_ortho script which should be idempotent.
+# If the output exists, we'll skip ODM. Since this doesn't require a big resouce
+#request, we only  request a large machine. This redirection is necessary so that
+# only a single rule that outputs an orthomosaic. If you split this section
+# into two parts (e.g. skip_creation/create), it causes problems with the output
+# becoming stale between runs (as the output now points to a different rule) and 
+# snakemake will delete the file.
 rule create_orthomosaics:
     output:
         orthomosaic=f"{working_dir}/orthomosaics_work/{{year}}/{{site}}/{{flight}}.tif"
@@ -113,11 +127,11 @@ rule create_orthomosaics:
     params:
         working_dir=working_dir,
         scratch_dir=f"{working_dir}/open_drone_map/ODM_Processed",
-        slurm_extra="--gpus=1"
-    threads: 8
+        slurm_extra=lambda wildcards: "--gpus=1" if _will_build_orthomosaic(wildcards) else ""
+    threads: lambda wildcards: 8 if _will_build_orthomosaic(wildcards) else 1
     resources:
-        mem_mb=65536,
-        runtime=720
+        mem_mb=lambda wildcards: 65536 if _will_build_orthomosaic(wildcards) else 2048,
+        runtime=lambda wildcards: 720 if _will_build_orthomosaic(wildcards) else 10
     shell:
         "bash create_ortho.sh {wildcards.site:q} {wildcards.year:q} {wildcards.flight:q} {params.working_dir:q} {params.scratch_dir:q} > {log:q} 2>&1"
 
