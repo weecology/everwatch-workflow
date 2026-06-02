@@ -1,5 +1,4 @@
 import os
-import re
 import tools
 from datetime import date as _date
 from pathlib import Path
@@ -17,30 +16,23 @@ working_dir = config["working_dir_test"]
 _ortho_base = Path(working_dir) / "orthomosaics"
 _raw_base = Path(working_dir) / "open_drone_map/RawData/SkyScoutFlights"
 
-SITES = []
-FLIGHTS = []
-YEARS = []
-
-# Discover existing orthomosaics and prefer to not regenerate if possible
+ARCHIVE_COMBOS = set()
 for _tif in sorted(_ortho_base.glob("*/*/*.tif")):
     if "_aligned" in _tif.stem:
         continue
-    SITES.append(_tif.parent.name)
-    FLIGHTS.append(_tif.stem)
-    YEARS.append(_tif.parent.parent.name)
+    ARCHIVE_COMBOS.add((_tif.parent.name, _tif.parent.parent.name, _tif.stem))
 
-EXISTING_ORTHO_FLIGHTS = set(FLIGHTS)
-
-# Raw flights are built only when no ortho exists for them yet.
-CREATE_FLIGHTS = set()
+RAW_COMBOS = set()
 for _dir in sorted(p for p in _raw_base.glob("*/*") if p.is_dir()):
     _flight = _dir.name
-    if _flight in EXISTING_ORTHO_FLIGHTS:
-        continue
-    SITES.append(_dir.parent.name)
-    FLIGHTS.append(_flight)
-    YEARS.append(_flight.split("_")[-1])
-    CREATE_FLIGHTS.add(_flight)
+    RAW_COMBOS.add((_dir.parent.name, _flight.split("_")[-1], _flight))
+
+ALL_COMBOS = sorted(ARCHIVE_COMBOS | RAW_COMBOS)
+BUILD_COMBOS = RAW_COMBOS - ARCHIVE_COMBOS
+
+SITES = [site for site, _, _ in ALL_COMBOS]
+YEARS = [year for _, year, _ in ALL_COMBOS]
+FLIGHTS = [flight for _, _, flight in ALL_COMBOS]
 
 # Extract combinations of SITES and YEARS
 site_year_combos = {*zip(SITES, YEARS)}
@@ -74,8 +66,8 @@ def _get_reference_ortho(wildcards):
     """Returns the previous aligned flight for the given input, used as reference for alignment."""
     prev = _prev_flight[wildcards.flight]
     if _prev_flight.get(prev) is not None:
-        return f"{working_dir}/orthomosaics/{wildcards.year}/{wildcards.site}/{prev}_aligned.tif"
-    return f"{working_dir}/orthomosaics/{wildcards.year}/{wildcards.site}/{prev}.tif"
+        return f"{working_dir}/orthomosaics_work/{wildcards.year}/{wildcards.site}/{prev}_aligned.tif"
+    return f"{working_dir}/orthomosaics_work/{wildcards.year}/{wildcards.site}/{prev}.tif"
 
 def _has_previous_flight(wildcards):
     """Checks if the previous flight exists, e.g. this is the first flight of the season for that site"""
@@ -98,8 +90,6 @@ wildcard_constraints:
     year=r"\d{4}",
     flight=r".*(?<!_aligned)"
 
-ruleorder: existing_orthomosaic > create_orthomosaics
-
 
 rule all:
     input:
@@ -114,27 +104,14 @@ rule all:
                zip, site=SITES, year=YEARS, flight=FLIGHTS)
 
 
-rule existing_orthomosaic:
-    """No-op for pre-existing orthomosaics"""
-    output:
-        orthomosaic=f"{working_dir}/orthomosaics/{{year}}/{{site}}/{{flight}}.tif"
-    wildcard_constraints:
-        flight="|".join(sorted(re.escape(f) for f in EXISTING_ORTHO_FLIGHTS)) or "(?!)"
-    shell:
-        "test -f {output.orthomosaic}"
-
-
 rule create_orthomosaics:
-    input:
-        raw_data_root=f"{working_dir}/open_drone_map/RawData/SkyScoutFlights/{{site}}/{{flight}}"
     output:
-        orthomosaic=f"{working_dir}/orthomosaics/{{year}}/{{site}}/{{flight}}.tif"
-    wildcard_constraints:
-        flight="|".join(sorted(re.escape(f) for f in CREATE_FLIGHTS)) or "(?!)"
+        orthomosaic=f"{working_dir}/orthomosaics_work/{{year}}/{{site}}/{{flight}}.tif"
     log:
         f"{working_dir}/logs/create_orthomosaics/{{year}}/{{site}}/{{flight}}.log"
     conda: "envs/odm.yml"
     params:
+        working_dir=working_dir,
         scratch_dir=f"{working_dir}/open_drone_map/ODM_Processed",
         slurm_extra="--gpus=1"
     threads: 8
@@ -142,19 +119,19 @@ rule create_orthomosaics:
         mem_mb=65536,
         runtime=720
     shell:
-        "bash process_ortho.sh {input.raw_data_root} {output.orthomosaic} {params.scratch_dir} > {log} 2>&1"
+        "bash create_ortho.sh {wildcards.site:q} {wildcards.year:q} {wildcards.flight:q} {params.working_dir:q} {params.scratch_dir:q} > {log:q} 2>&1"
 
 
 rule align_mosaics:
     input:
-        orthomosaic=f"{working_dir}/orthomosaics/{{year}}/{{site}}/{{flight}}.tif",
+        orthomosaic=f"{working_dir}/orthomosaics_work/{{year}}/{{site}}/{{flight}}.tif",
         reference=_get_reference_ortho,
     output:
-        aligned=f"{working_dir}/orthomosaics/{{year}}/{{site}}/{{flight}}_aligned.tif",
+        aligned=f"{working_dir}/orthomosaics_work/{{year}}/{{site}}/{{flight}}_aligned.tif",
     log:
         f"{working_dir}/logs/align_mosaics/{{year}}/{{site}}/{{flight}}.log"
     params:
-        align_dir=f"{working_dir}/orthomosaics/{{year}}/{{site}}/align/{{flight}}",
+        align_dir=f"{working_dir}/orthomosaics_work/{{year}}/{{site}}/align/{{flight}}",
     conda: "envs/odm.yml"
     threads: 12
     resources:
@@ -179,8 +156,8 @@ rule project_mosaics:
     input:
         orthomosaic=branch(
             _has_previous_flight,
-            then=f"{working_dir}/orthomosaics/{{year}}/{{site}}/{{flight}}_aligned.tif",
-            otherwise=f"{working_dir}/orthomosaics/{{year}}/{{site}}/{{flight}}.tif",
+            then=f"{working_dir}/orthomosaics_work/{{year}}/{{site}}/{{flight}}_aligned.tif",
+            otherwise=f"{working_dir}/orthomosaics_work/{{year}}/{{site}}/{{flight}}.tif",
         )
     output:
         projected=f"{working_dir}/projected_mosaics/{{year}}/{{site}}/{{flight}}_projected.tif"
@@ -199,8 +176,8 @@ rule project_mosaics_webmercator:
     input:
         orthomosaic=branch(
             _has_previous_flight,
-            then=f"{working_dir}/orthomosaics/{{year}}/{{site}}/{{flight}}_aligned.tif",
-            otherwise=f"{working_dir}/orthomosaics/{{year}}/{{site}}/{{flight}}.tif",
+            then=f"{working_dir}/orthomosaics_work/{{year}}/{{site}}/{{flight}}_aligned.tif",
+            otherwise=f"{working_dir}/orthomosaics_work/{{year}}/{{site}}/{{flight}}.tif",
         )
     output:
         webmercator=f"{working_dir}/projected_mosaics/webmercator/{{year}}/{{site}}/{{flight}}_projected.tif"

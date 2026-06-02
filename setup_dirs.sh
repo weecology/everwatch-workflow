@@ -7,6 +7,7 @@ WORKING_DIR="${1:?Usage: $0 <working_dir>}"
 
 dirs=(
     orthomosaics
+    orthomosaics_work
     projected_mosaics
     projected_mosaics/webmercator
     predictions

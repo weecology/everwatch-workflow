@@ -1,25 +1,40 @@
 #!/bin/bash
-# Usage: bash process_ortho.sh <source_folder> <output_tif> <working_dir>
-#   source_folder  - directory containing raw JPG images
-#   output_tif     - destination path for the final orthomosaic .tif
-#   working_dir    - scratch directory for ODM intermediate files
+# Usage: bash create_ortho.sh <site> <year> <flight> <working_dir> <scratch_dir>
 
 set -euo pipefail
 
-SOURCE_FOLDER="${1:?Usage: $0 <source_folder> <output_tif> <working_dir>}"
-OUTPUT_PATH="${2:?Usage: $0 <source_folder> <output_tif> <working_dir>}"
-WORKING_DIR="${3:?Usage: $0 <source_folder> <output_tif> <working_dir>}"
+SITE="${1:?Usage: $0 <site> <year> <flight> <working_dir> <scratch_dir>}"
+YEAR="${2:?Usage: $0 <site> <year> <flight> <working_dir> <scratch_dir>}"
+FLIGHT="${3:?Usage: $0 <site> <year> <flight> <working_dir> <scratch_dir>}"
+WORKING_DIR="${4:?Usage: $0 <site> <year> <flight> <working_dir> <scratch_dir>}"
+SCRATCH_DIR="${5:?Usage: $0 <site> <year> <flight> <working_dir> <scratch_dir>}"
 ODM_SIF="/blue/ewhite/everglades/open_drone_map/odm.sif"
+
+SOURCE_FOLDER="${WORKING_DIR}/open_drone_map/RawData/SkyScoutFlights/${SITE}/${FLIGHT}"
+ARCHIVE_PATH="${WORKING_DIR}/orthomosaics/${YEAR}/${SITE}/${FLIGHT}.tif"
+OUTPUT_PATH="${WORKING_DIR}/orthomosaics_work/${YEAR}/${SITE}/${FLIGHT}.tif"
+
+# Check if existing orthomosaic, and if so break early
+mkdir -p "$(dirname "${OUTPUT_PATH}")"
+if [[ -f "${ARCHIVE_PATH}" ]]; then
+    ln -sfn "${ARCHIVE_PATH}" "${OUTPUT_PATH}"
+    exit 0
+fi
+
+if [[ ! -d "${SOURCE_FOLDER}" ]]; then
+    echo "No archived ortho (${ARCHIVE_PATH}) and no raw data (${SOURCE_FOLDER})" >&2
+    exit 1
+fi
 
 source /blue/ewhite/everglades/open_drone_map/odm_env/bin/activate
 
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
-BASENAME=$(basename "$SOURCE_FOLDER")
-TARGET_DIR="${WORKING_DIR}/${BASENAME}"
+TARGET_DIR="${SCRATCH_DIR}/${FLIGHT}"
 
 printenv | grep -i slurm | sort
 
 mkdir -p "${TARGET_DIR}/code"
+
 
 # Perform PPK geotagging
 python "${SCRIPT_DIR}/wispr_to_odm_ppk.py" "${SOURCE_FOLDER}" "${TARGET_DIR}/code/geo.txt" || \
@@ -57,11 +72,12 @@ rm -rf "${TARGET_DIR}/code/images"
 
 # Copy orthomosaic to the requested output path
 ODM_OUTPUT="${TARGET_DIR}/code/odm_orthophoto/odm_orthophoto.tif"
-echo "Copying ${ODM_OUTPUT} to ${OUTPUT_PATH}"
-mkdir -p "$(dirname "${OUTPUT_PATH}")"
-cp "${ODM_OUTPUT}" "${OUTPUT_PATH}"
+echo "Copying ${ODM_OUTPUT} to ${ARCHIVE_PATH}"
+mkdir -p "$(dirname "${ARCHIVE_PATH}")"
+cp "${ODM_OUTPUT}" "${ARCHIVE_PATH}"
+ln -sfn "${ARCHIVE_PATH}" "${OUTPUT_PATH}"
 
 echo "Setting permissions on target folder"
 bash /home/veitchmichaelisj/bin/group-permissions-update.sh "${TARGET_DIR}"
 
-echo "Completed processing ${BASENAME}"
+echo "Completed processing ${FLIGHT}"
