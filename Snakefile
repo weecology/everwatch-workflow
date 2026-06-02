@@ -71,7 +71,7 @@ for (_s, _y), _ordered in _site_year_flights.items():
 
 
 def _get_reference_ortho(wildcards):
-    """Returns the previous flight for the given input used as reference for alignment."""
+    """Returns the previous aligned flight for the given input, used as reference for alignment."""
     prev = _prev_flight[wildcards.flight]
     if _prev_flight.get(prev) is not None:
         return f"{working_dir}/orthomosaics/{wildcards.year}/{wildcards.site}/{prev}_aligned.tif"
@@ -167,9 +167,10 @@ rule align_mosaics:
             {input.reference:q} \
             {input.orthomosaic:q} \
             --out-dir {params.align_dir:q} \
+            --transform homography \
             --workers {threads} \
             --cleanup
-        mv {params.align_dir:q}/{wildcards.flight}_aligned_translation.tif \
+        mv {params.align_dir:q}/{wildcards.flight}_aligned_homography.tif \
             {output.aligned:q}
         """
 
