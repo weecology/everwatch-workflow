@@ -1,7 +1,5 @@
 import os
 import tools
-from datetime import date as _date
-from pathlib import Path
 
 configfile: "snakemake_config.yml"
 
@@ -13,83 +11,36 @@ test_env_set = True
 working_dir = config["working_dir_test"]
 
 
-_ortho_base = Path(working_dir) / "orthomosaics"
-_raw_base = Path(working_dir) / "open_drone_map/RawData/SkyScoutFlights"
-
-ARCHIVE_COMBOS = set()
-for _tif in sorted(_ortho_base.glob("*/*/*.tif")):
-    if "_aligned" in _tif.stem:
-        continue
-    ARCHIVE_COMBOS.add((_tif.parent.name, _tif.parent.parent.name, _tif.stem))
-
-RAW_COMBOS = set()
-for _dir in sorted(p for p in _raw_base.glob("*/*") if p.is_dir()):
-    _flight = _dir.name
-    RAW_COMBOS.add((_dir.parent.name, _flight.split("_")[-1], _flight))
-
-ALL_COMBOS = sorted(ARCHIVE_COMBOS | RAW_COMBOS)
-
-# Flights for which we need to run ODM
-BUILD_COMBOS = RAW_COMBOS - ARCHIVE_COMBOS
-
-SITES = [site for site, _, _ in ALL_COMBOS]
-YEARS = [year for _, year, _ in ALL_COMBOS]
-FLIGHTS = [flight for _, _, flight in ALL_COMBOS]
-
-# Extract combinations of SITES and YEARS
-site_year_combos = {*zip(SITES, YEARS)}
-if site_year_combos:
-    SITES_SY, YEARS_SY = list(zip(*site_year_combos))
-else:
-    SITES_SY, YEARS_SY = [], []
-
-# Build per-site-year chronological lookup: map each flight to its predecessor
-def _parse_flight_date(flight_name):
-    parts = flight_name.split("_")
-    try:
-        mm, dd, yyyy = int(parts[-3]), int(parts[-2]), int(parts[-1])
-    except (ValueError, IndexError) as e:
-        raise ValueError(f"Cannot parse date from flight name {flight_name!r} (parts={parts}): {e}")
-    return _date(yyyy, mm, dd)
-
-_site_year_flights: dict[tuple[str, str], list[str]] = {}
-for _s, _y, _f in zip(SITES, YEARS, FLIGHTS):
-    _site_year_flights.setdefault((_s, _y), []).append(_f)
-for _key in _site_year_flights:
-    _site_year_flights[_key].sort(key=_parse_flight_date)
-
-_prev_flight: dict[str, str | None] = {}
-for (_s, _y), _ordered in _site_year_flights.items():
-    for _i, _f in enumerate(_ordered):
-        _prev_flight[_f] = _ordered[_i - 1] if _i > 0 else None
+# Discover flights and derive all combos + chronological ordering. Base dirs come from config.
+ortho_base = f"{working_dir}/{config['orthomosaic_dir']}"
+raw_base = f"{working_dir}/{config['raw_flight_dir']}"
+flight_index = tools.build_flight_index(ortho_base, raw_base)
+SITES, YEARS, FLIGHTS = flight_index.sites, flight_index.years, flight_index.flights
+SITES_SY, YEARS_SY = flight_index.sites_sy, flight_index.years_sy
 
 
 def _get_reference_ortho(wildcards):
-    """Returns the previous aligned flight for the given input, used as reference for alignment."""
-    prev = _prev_flight[wildcards.flight]
-    if _prev_flight.get(prev) is not None:
-        return f"{working_dir}/orthomosaics_work/{wildcards.year}/{wildcards.site}/{prev}_aligned.tif"
-    return f"{working_dir}/orthomosaics_work/{wildcards.year}/{wildcards.site}/{prev}.tif"
+    """Previous flight's orthomosaic, used as the alignment reference."""
+    prev = flight_index.previous_flight(wildcards.flight)
+    suffix = "_aligned" if flight_index.has_previous(prev) else ""
+    return f"{working_dir}/orthomosaics_work/{wildcards.year}/{wildcards.site}/{prev}{suffix}.tif"
+
 
 def _has_previous_flight(wildcards):
-    """Checks if the previous flight exists, e.g. this is the first flight of the season for that site"""
-    return _prev_flight.get(wildcards.flight) is not None
+    """False if this is the first flight of the season for that site."""
+    return flight_index.has_previous(wildcards.flight)
 
 
 def _will_build_orthomosaic(wildcards):
-    return (wildcards.site, wildcards.year, wildcards.flight) in BUILD_COMBOS
+    return flight_index.needs_odm(wildcards.site, wildcards.year, wildcards.flight)
 
 
 def flights_in_year_site(wildcards):
-    """Discover flights by site and year"""
-    basepath = f"{working_dir}/predictions"
-    flights_in_year_site = []
-    for site, year, flight in zip(SITES, YEARS, FLIGHTS):
-        flight_path = os.path.join(basepath, year, site, f"{flight}_projected.shp")
-        event = tools.get_event(flight_path)
-        if site == wildcards.site and year == wildcards.year and event[0] == "primary":
-            flights_in_year_site.append(flight_path)
-    return flights_in_year_site
+    """Primary-event prediction shapefiles for the given site/year."""
+    return [
+        f"{working_dir}/predictions/{wildcards.year}/{wildcards.site}/{flight}_projected.shp"
+        for flight in flight_index.primary_flights(wildcards.site, wildcards.year)
+    ]
 
 
 wildcard_constraints:
