@@ -28,13 +28,24 @@ Once imagery arrives on the HPC as an orthomosaic, a nightly Snakemake workflow 
 
 Snakemake processes any new data or data that has been updated while ignoring data that has already been processed. So a new when a new orthomosaic is synced that imagery will be processed and any combined files that depend on that imagery regenerated.
 
-The general command for running the snakemake workflow is:
+The workflow is run through a **profile** that sets the working dir, executor, and the
+resource/retry/conda flags — so you normally don't pass those on the command line. Pick
+the profile for your environment:
+
+- `profiles/hipergator` — **production** on the HiPerGator (or other HPC): writes to
+  `/blue/ewhite/everglades` and deploys the predictions.
+- `profiles/hipergator_test` — same as production but writes to
+  `/blue/ewhite/everglades_test` and performs a dry-run deployment.
+- `profiles/local` — for local testing without SLURM.
+
+The general command is:
 
 ```bash
-snakemake --printshellcmds --keep-going --cores 10 --resources gpu=2 --rerun-incomplete --latency-wait 10 --use-conda
+snakemake --jobs 10 --profile profiles/hipergator_test
 ```
 
-`--cores` is the number of cores and `--resources gpu=` is the number of gpus to be used.
+To process only part of the graph, name the output path(s) after the profile — e.g. a
+single site-year's combined predictions or its QGIS project (see below).
 
 The workflow currently does the following:
 1. Projects all orthomosaics in `/blue/ewhite/everglades/orthomosaics` using `project_ortho.sh` (UTM for bird detection, web-mercator for mapbox tiles)

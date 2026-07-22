@@ -103,6 +103,8 @@ class FlightIndex:
 
     def has_previous(self, flight: str | None) -> bool:
         """True if `flight` has a predecessor (i.e. not the first of its season)."""
+        if flight is None:
+            return False
         return self.prev_flight.get(flight) is not None
 
     def needs_odm(self, site: str, year: str, flight: str) -> bool:

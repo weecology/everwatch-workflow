@@ -46,6 +46,23 @@ def flights_in_year_site(wildcards):
     ]
 
 
+def qgis_inputs_for_site(wildcards):
+    """Every ortho + prediction the site/year QGIS project references.
+
+    Referenced to projected images so it regenerates when flights change or are added.
+    """
+    flights = [
+        f for s, y, f in flight_index.all_combinations
+        if y == wildcards.year and s == wildcards.site
+    ]
+    inputs = []
+    for flight in flights:
+        inputs.append(f"{working_dir}/projected_mosaics/{wildcards.year}/{wildcards.site}/{flight}_projected.tif")
+        inputs.append(f"{working_dir}/predictions/{wildcards.year}/{wildcards.site}/{flight}_projected.shp")
+    inputs.append(f"{working_dir}/predictions/{wildcards.year}/{wildcards.site}/{wildcards.site}_{wildcards.year}_combined.shp")
+    return inputs
+
+
 wildcard_constraints:
     year=r"\d{4}",
     flight=r".*(?<!_aligned)"
@@ -65,7 +82,9 @@ rule all:
         expand(f"{working_dir}/processed_nests/{{year}}/{{site}}/{{site}}_{{year}}_processed_nests.shp",
                zip, site=SITES, year=YEARS),
         expand(f"{working_dir}/mapbox/last_uploaded/{{year}}/{{site}}/{{flight}}.mbtiles",
-               zip, site=SITES, year=YEARS, flight=FLIGHTS)
+               zip, site=SITES, year=YEARS, flight=FLIGHTS),
+        expand(f"{working_dir}/qgis_projects/{{year}}/{{site}}/everwatch_{{year}}_{{site}}.qgz",
+               zip, site=SITES_SY, year=YEARS_SY)
 
 
 # We create symlinks to a working directory that can be used for subsequent steps.
@@ -331,3 +350,20 @@ rule deploy_dryrun:
         bash archive_predictions.sh dryrun > {log} 2>&1
         touch {output}
         """
+
+
+# Create a shareable QGIS project with relative paths, plus an rsync manifest of the referenced files.
+rule create_qgis_project:
+    input:
+        qgis_inputs_for_site
+    output:
+        qgz=f"{working_dir}/qgis_projects/{{year}}/{{site}}/everwatch_{{year}}_{{site}}.qgz",
+        manifest=f"{working_dir}/qgis_projects/{{year}}/{{site}}/everwatch_{{year}}_{{site}}_manifest.txt"
+    log:
+        f"{working_dir}/logs/create_qgis_project/{{year}}/{{site}}.log"
+    conda: "envs/qgis.yml"
+    threads: 1
+    resources:
+        mem_mb=2000
+    shell:
+        "python create_qgis_project.py {wildcards.year} {wildcards.site} > {log:q} 2>&1"
