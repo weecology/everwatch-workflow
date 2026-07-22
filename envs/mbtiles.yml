@@ -3,21 +3,20 @@ channels:
   - conda-forge
 channel_priority: strict
 dependencies:
-  - python=3.10
+  - python
   - gdal
-  - geopandas=0.12.2
+  - geopandas
   - hdf5
   - libnetcdf
   - matplotlib
   - netcdf4
-  - numpy=1.26.4
+  - numpy
   - pandas
-  - pyogrio=0.10.0
+  - pyogrio
   - pyproj
-  - rasterio=1.4.3
+  - rasterio
   - scipy
   - pip
   - pip:
-        - rio-mbtiles
-        - shapely==1.7.0
-        - boto3
+      - rio-mbtiles
+      - boto3
