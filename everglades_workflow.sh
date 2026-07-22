@@ -9,14 +9,15 @@ source /etc/profile.d/modules.sh
 ml conda
 conda activate everwatch
 export PYTHONNOUSERSITE=1
-export TEST_ENV=1
 cd /blue/ewhite/everglades/everwatch-workflow/
 
 bash setup_dirs.sh /blue/ewhite/everglades
 
 snakemake --unlock
 echo "INFO [$(date "+%Y-%m-%d %H:%M:%S")] Starting Snakemake pipeline"
-snakemake --profile profiles/slurm
+# TEST run: writes to the _test dir and skips deployment. To go live, switch to
+# profiles/hipergator (and setup_dirs /blue/ewhite/everglades).
+snakemake --profile profiles/hipergator_test
 
 echo ""
 echo "=============================="

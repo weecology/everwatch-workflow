@@ -1,4 +1,9 @@
+# HiPerGator PRODUCTION profile
+# Triggers archive_predictions.sh
 executor: slurm
+config:
+  - "working_dir=/blue/ewhite/everglades"
+  - "test=false"
 latency-wait: 60
 jobs: 20
 keep-going: true

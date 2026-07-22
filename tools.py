@@ -192,5 +192,10 @@ def get_site(path: str) -> str:
 
 
 def get_working_dir() -> str:
-    test_env_set = os.environ.get("TEST_ENV")
-    return "/blue/ewhite/everglades_test" if test_env_set else "/blue/ewhite/everglades"
+    # The Snakefile exports EVERWATCH_WORKING_DIR from
+    # config["working_dir"] (set by the active profile) so standalone scripts resolve
+    # the same dir as the rules.
+    override = os.environ.get("EVERWATCH_WORKING_DIR")
+    if override:
+        return override
+    return "/blue/ewhite/everglades"

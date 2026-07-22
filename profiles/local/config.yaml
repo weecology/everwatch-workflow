@@ -1,0 +1,14 @@
+# Local profile: run on this machine (no SLURM). This file is generic (no
+# machine-specific paths); the working dir and layout overrides are supplied at runtime,
+# so the shared defaults in snakemake_config.yml stay untouched.
+# test=true so a local run never triggers deployment.
+executor: local
+config:
+  - "test=true"
+cores: 4
+use-conda: true
+rerun-incomplete: true
+printshellcmds: true
+latency-wait: 10
+default-resources:
+  runtime: 60

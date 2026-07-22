@@ -1,6 +1,9 @@
 mapbox-param: ""
-working_dir: "/blue/ewhite/everglades"
-working_dir_test: "/blue/ewhite/everglades_test"
+
+# `working_dir` and `test` are set per environment by the profiles
+# (profiles/hipergator, profiles/hipergator_test, profiles/local).
+working_dir: "/blue/ewhite/everglades_test"
+test: true
 
 # Sub-directories under working_dir used to discover flights.
 orthomosaic_dir: "orthomosaics"

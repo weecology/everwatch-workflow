@@ -10,7 +10,6 @@ ml conda
 conda activate everwatch
 export PYTHONNOUSERSITE=1
 
-export TEST_ENV=True
 # Guardrails for memory-heavy raster jobs
 export GDAL_CACHEMAX=4096
 export RASTERIO_MAX_DATASET_CACHE=64
@@ -23,7 +22,7 @@ bash setup_dirs.sh /blue/ewhite/everglades_test
 
 snakemake --unlock
 echo "INFO [$(date "+%Y-%m-%d %H:%M:%S")] Starting Snakemake pipeline"
-snakemake --profile profiles/slurm --dry-run
+snakemake --profile profiles/hipergator_test --dry-run
 
 echo ""
 echo "=============================="

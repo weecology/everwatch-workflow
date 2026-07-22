@@ -1,0 +1,15 @@
+# HiPerGator TEST profile: skips deployment
+executor: slurm
+config:
+  - "working_dir=/blue/ewhite/everglades_test"
+  - "test=true"
+latency-wait: 60
+jobs: 20
+keep-going: true
+retries: 2
+rerun-incomplete: true
+use-conda: true
+printshellcmds: true
+default-resources:
+  runtime: 60
+  slurm_jobname: "smk.{rule}"

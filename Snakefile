@@ -3,12 +3,15 @@ import tools
 
 configfile: "snakemake_config.yml"
 
-# Set test environment variable for tools.get_working_dir()
-os.environ["TEST_ENV"] = "1"
+# `working_dir` and `test` come from the active profile (see profiles/*). Export the
+# working dir so standalone scripts (via tools.get_working_dir) resolve the same dir as
+# the rules do.
+working_dir = config["working_dir"]
+os.environ["EVERWATCH_WORKING_DIR"] = working_dir
 
-# Hardcode true for the moment while we're testing for safety.
-test_env_set = True
-working_dir = config["working_dir_test"]
+# `test` gates deployment: prod publishes predictions, a test run only smoke-tests the
+# publish path (see `rule all` and the two deploy rules below). Consumed at DAG build.
+test = str(config.get("test", True)).strip().lower() not in ("false", "0", "no", "")
 
 
 # Discover flights and derive all combos + chronological ordering. Base dirs come from config.
@@ -52,7 +55,11 @@ rule all:
     input:
         f"{working_dir}/everwatch-workflow/App/Zooniverse/data/PredictedBirds.zip",
         f"{working_dir}/everwatch-workflow/App/Zooniverse/data/nest_detections_processed.zip",
-        f"{working_dir}/everwatch-workflow/App/Zooniverse/data/forecast_web_updated.txt",
+        # Deploy: prod publishes predictions; a test run only smoke-tests the publish
+        # path. Selecting one target here means only that deploy rule joins the DAG.
+        (f"{working_dir}/everwatch-workflow/App/Zooniverse/data/forecast_web_updated.txt"
+         if not test else
+         f"{working_dir}/everwatch-workflow/App/Zooniverse/data/forecast_web_dryrun.txt"),
         expand(f"{working_dir}/predictions/{{year}}/{{site}}/{{flight}}_projected.shp",
                zip, site=SITES, year=YEARS, flight=FLIGHTS),
         expand(f"{working_dir}/processed_nests/{{year}}/{{site}}/{{site}}_{{year}}_processed_nests.shp",
@@ -287,6 +294,8 @@ rule upload_mapbox:
         """
 
 
+# Deploy the finished predictions to the public everwatch-predictions repo. Only one of
+# the two rules below joins the DAG, selected by `test` in `rule all`.
 rule update_everwatch_predictions:
     input:
         f"{working_dir}/everwatch-workflow/App/Zooniverse/data/PredictedBirds.zip"
@@ -300,6 +309,25 @@ rule update_everwatch_predictions:
         mem_mb=4000
     shell:
         """
-        bash archive_predictions.sh > {log} 2>&1
+        bash archive_predictions.sh deploy > {log} 2>&1
+        touch {output}
+        """
+
+
+# Nightly smoke test of the publish path (token, remote, push) without touching main.
+rule deploy_dryrun:
+    input:
+        f"{working_dir}/everwatch-workflow/App/Zooniverse/data/PredictedBirds.zip"
+    output:
+        f"{working_dir}/everwatch-workflow/App/Zooniverse/data/forecast_web_dryrun.txt"
+    log:
+        f"{working_dir}/logs/deploy_dryrun.log"
+    conda: "envs/everwatch.yml"
+    threads: 1
+    resources:
+        mem_mb=4000
+    shell:
+        """
+        bash archive_predictions.sh dryrun > {log} 2>&1
         touch {output}
         """
