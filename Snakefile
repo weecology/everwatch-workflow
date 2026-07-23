@@ -101,14 +101,15 @@ rule create_orthomosaics:
     log:
         f"{working_dir}/logs/create_orthomosaics/{{year}}/{{site}}/{{flight}}.log"
     conda: "envs/odm.yml"
+    retries: 0
     params:
         working_dir=working_dir,
         scratch_dir=f"{working_dir}/open_drone_map/ODM_Processed",
         slurm_extra=lambda wildcards: "--gpus=1" if _will_build_orthomosaic(wildcards) else ""
     threads: lambda wildcards: 8 if _will_build_orthomosaic(wildcards) else 1
     resources:
-        mem_mb=lambda wildcards: 65536 if _will_build_orthomosaic(wildcards) else 2048,
-        runtime=lambda wildcards: 720 if _will_build_orthomosaic(wildcards) else 10
+        mem_mb=lambda wildcards: 131072 if _will_build_orthomosaic(wildcards) else 2048,
+        runtime=lambda wildcards: 1440 if _will_build_orthomosaic(wildcards) else 10
     shell:
         "bash create_ortho.sh {wildcards.site:q} {wildcards.year:q} {wildcards.flight:q} {params.working_dir:q} {params.scratch_dir:q} > {log:q} 2>&1"
 
