@@ -128,7 +128,7 @@ rule align_mosaics:
     threads: 12
     resources:
         mem_mb=32000,
-        runtime=10
+        runtime=30
     shell:
         """
         exec > {log:q} 2>&1
