@@ -137,6 +137,9 @@ rule align_mosaics:
             {input.orthomosaic:q} \
             --out-dir {params.align_dir:q} \
             --transform homography \
+            --tile-size-m 50 \
+            --downsample 0.25 \
+            --blur-sigma 2 \
             --workers {threads} \
             --cleanup
         mv {params.align_dir:q}/{wildcards.flight}_aligned_homography.tif \
