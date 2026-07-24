@@ -3,16 +3,13 @@ import tools
 
 configfile: "snakemake_config.yml"
 
-# `working_dir` and `test` come from the active profile (see profiles/*). Export the
-# working dir so standalone scripts (via tools.get_working_dir) resolve the same dir as
-# the rules do.
+# Export the working dir so standalone scripts (via tools.get_working_dir)
+# resolve the same dir as the rules do.
 working_dir = config["working_dir"]
 os.environ["EVERWATCH_WORKING_DIR"] = working_dir
 
-# `test` gates deployment: prod publishes predictions, a test run only smoke-tests the
-# publish path (see `rule all` and the two deploy rules below). Consumed at DAG build.
+# Check if we're in `test` mode.  This is used to select the deploy rule in `rule all`.
 test = str(config.get("test", True)).strip().lower() not in ("false", "0", "no", "")
-
 
 # Discover flights and derive all combos + chronological ordering. Base dirs come from config.
 ortho_base = f"{working_dir}/{config['orthomosaic_dir']}"
@@ -72,8 +69,7 @@ rule all:
     input:
         f"{working_dir}/everwatch-workflow/App/Zooniverse/data/PredictedBirds.zip",
         f"{working_dir}/everwatch-workflow/App/Zooniverse/data/nest_detections_processed.zip",
-        # Deploy: prod publishes predictions; a test run only smoke-tests the publish
-        # path. Selecting one target here means only that deploy rule joins the DAG.
+        # A test run only dry runs the publish path.
         (f"{working_dir}/everwatch-workflow/App/Zooniverse/data/forecast_web_updated.txt"
          if not test else
          f"{working_dir}/everwatch-workflow/App/Zooniverse/data/forecast_web_dryrun.txt"),
@@ -83,15 +79,15 @@ rule all:
                zip, site=SITES, year=YEARS),
         expand(f"{working_dir}/mapbox/last_uploaded/{{year}}/{{site}}/{{flight}}.mbtiles",
                zip, site=SITES, year=YEARS, flight=FLIGHTS),
-        expand(f"{working_dir}/qgis_projects/{{year}}/{{site}}/everwatch_{{year}}_{{site}}.qgz",
+        expand(f"{working_dir}/qgis_projects/everwatch_{{year}}_{{site}}.qgz",
                zip, site=SITES_SY, year=YEARS_SY)
 
 
 # We create symlinks to a working directory that can be used for subsequent steps.
-# This rule will  call a create_ortho script which should be idempotent.
-# If the output exists, we'll skip ODM. Since this doesn't require a big resouce
-#request, we only  request a large machine. This redirection is necessary so that
-# only a single rule that outputs an orthomosaic. If you split this section
+# This rule will call a create_ortho script which should be idempotent.
+
+# If the output exists, we'll skip ODM. This redirection is necessary so that
+# only a single rule outputs an orthomosaic. If you split the conditional rule
 # into two parts (e.g. skip_creation/create), it causes problems with the output
 # becoming stale between runs (as the output now points to a different rule) and 
 # snakemake will delete the file.
@@ -130,6 +126,9 @@ rule align_mosaics:
         mem_mb=32000,
         runtime=30
     shell:
+        # These parameters have been tested to work reasonably well;
+        # if you change the orthomosaccic resolution, you may need to
+        # adjust the downsample parameter.
         """
         exec > {log:q} 2>&1
         orthoalign \
@@ -317,8 +316,7 @@ rule upload_mapbox:
         """
 
 
-# Deploy the finished predictions to the public everwatch-predictions repo. Only one of
-# the two rules below joins the DAG, selected by `test` in `rule all`.
+# Deploy the finished predictions to the public everwatch-predictions repo.
 rule update_everwatch_predictions:
     input:
         f"{working_dir}/everwatch-workflow/App/Zooniverse/data/PredictedBirds.zip"
@@ -337,7 +335,7 @@ rule update_everwatch_predictions:
         """
 
 
-# Nightly smoke test of the publish path (token, remote, push) without touching main.
+# Check deployment without pushing to main.
 rule deploy_dryrun:
     input:
         f"{working_dir}/everwatch-workflow/App/Zooniverse/data/PredictedBirds.zip"
@@ -361,8 +359,8 @@ rule create_qgis_project:
     input:
         qgis_inputs_for_site
     output:
-        qgz=f"{working_dir}/qgis_projects/{{year}}/{{site}}/everwatch_{{year}}_{{site}}.qgz",
-        manifest=f"{working_dir}/qgis_projects/{{year}}/{{site}}/everwatch_{{year}}_{{site}}_manifest.txt"
+        qgz=f"{working_dir}/qgis_projects/everwatch_{{year}}_{{site}}.qgz",
+        manifest=f"{working_dir}/qgis_projects/everwatch_{{year}}_{{site}}_manifest.txt"
     log:
         f"{working_dir}/logs/create_qgis_project/{{year}}/{{site}}.log"
     conda: "envs/qgis.yml"
