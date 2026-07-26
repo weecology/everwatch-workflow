@@ -198,6 +198,7 @@ rule predict_birds:
         slurm_extra="--gpus=1"
     threads: 1
     resources:
+        runtime=120,
         mem_mb=40000,
         predict_birds_slot=1
     shell:
