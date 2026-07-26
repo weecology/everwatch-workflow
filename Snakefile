@@ -105,7 +105,7 @@ rule create_orthomosaics:
     threads: lambda wildcards: 8 if _will_build_orthomosaic(wildcards) else 1
     resources:
         mem_mb=lambda wildcards: 131072 if _will_build_orthomosaic(wildcards) else 2048,
-        runtime=lambda wildcards: 1440 if _will_build_orthomosaic(wildcards) else 10
+        runtime=lambda wildcards: 2880 if _will_build_orthomosaic(wildcards) else 10
     shell:
         "bash create_ortho.sh {wildcards.site:q} {wildcards.year:q} {wildcards.flight:q} {params.working_dir:q} {params.scratch_dir:q} > {log:q} 2>&1"
 
