@@ -282,7 +282,7 @@ def add_predictions(
     manifest.extend(os.path.relpath(link, working_dir) for link in links)
 
     perflight_grp = group.addGroup("Per-flight")
-    for flight in flights:
+    for flight in reversed(flights):
         shp = os.path.join(
             working_dir, "predictions", year, site, f"{flight}_projected.shp",
         )
