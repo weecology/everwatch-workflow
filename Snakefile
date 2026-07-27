@@ -1,4 +1,6 @@
 import os
+import sys
+
 import tools
 
 configfile: "snakemake_config.yml"
@@ -11,12 +13,24 @@ os.environ["EVERWATCH_WORKING_DIR"] = working_dir
 # Check if we're in `test` mode.  This is used to select the deploy rule in `rule all`.
 test = str(config.get("test", True)).strip().lower() not in ("false", "0", "no", "")
 
+# Flights we want to skip:
+exclude_file = config["exclude_file"]
+if not os.path.isabs(exclude_file):
+    exclude_file = os.path.join(workflow.basedir, exclude_file)
+
 # Discover flights and derive all combos + chronological ordering. Base dirs come from config.
 ortho_base = f"{working_dir}/{config['orthomosaic_dir']}"
 raw_base = f"{working_dir}/{config['raw_flight_dir']}"
-flight_index = tools.build_flight_index(ortho_base, raw_base)
+flight_index = tools.build_flight_index(ortho_base, raw_base,
+                                        tools.load_exclusions(exclude_file))
 SITES, YEARS, FLIGHTS = flight_index.sites, flight_index.years, flight_index.flights
 SITES_SY, YEARS_SY = flight_index.sites_sy, flight_index.years_sy
+
+if flight_index.excluded:
+    print(f"Skipping {len(flight_index.excluded)} flight(s) listed in {exclude_file}:",
+          file=sys.stderr)
+    for site, year, flight in flight_index.excluded:
+        print(f"  {year} {site} {flight}", file=sys.stderr)
 
 
 def _get_reference_ortho(wildcards):

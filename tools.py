@@ -1,3 +1,4 @@
+import csv
 import datetime
 import os
 import re
@@ -78,6 +79,43 @@ def discover_flights(ortho_base: str, raw_base: str) -> tuple[set[FlightCombinat
     return archive, raw
 
 
+def load_exclusions(path: str | os.PathLike) -> set[FlightCombination]:
+    """Load flight exclusions from a CSV
+
+    The CSV should contain a header row "year,site,flight" and then one row per flight to exclude.
+
+    The flight column is the date part of the flight name, with its event suffix if
+    it has one, e.g. "05_08_2026_B".
+    """
+    path = Path(path)
+    if not path.exists():
+        return set()
+
+    exclusions: set[FlightCombination] = set()
+    with path.open(newline="") as handle:
+        for lineno, row in enumerate(csv.reader(handle), start=1):
+            fields = [value.strip() for value in row]
+            if not any(fields) or fields[0].startswith("#"):
+                continue
+            if len(fields) != 3:
+                raise ValueError(f"{path}:{lineno}: expected 3 columns (year,site,flight), got {row!r}")
+            year, site, flight = fields
+            if [value.casefold() for value in fields] == ["year", "site", "flight"]:
+                continue
+            exclusions.add((site, year, flight))
+    return exclusions
+
+
+def _exclusion_key(combination: FlightCombination) -> FlightCombination:
+    """A discovered flight written the way the exclude file writes it."""
+    site, year, flight = combination
+    try:
+        return (site, year, get_date(flight) + get_event(flight)[1])
+    except ValueError:
+        # No date in the name, so no exclude row can name it.
+        return combination
+
+
 @dataclass(frozen=True)
 class FlightIndex:
     """Flights discovered under a working dir.
@@ -86,6 +124,8 @@ class FlightIndex:
     Snakemake's expand(..., zip, ...);
     
     `sites_sy`/`years_sy` are unique site/year pairs.
+
+    `excluded` holds the flights that were found but dropped via exclude.txt
     """
 
     all_combinations: list[FlightCombination]
@@ -96,6 +136,7 @@ class FlightIndex:
     sites_sy: list[str]
     years_sy: list[str]
     prev_flight: dict[str, str | None]
+    excluded: list[FlightCombination]
 
     def previous_flight(self, flight: str) -> str | None:
         """The chronologically preceding flight at the same site/year, or None."""
@@ -120,11 +161,15 @@ class FlightIndex:
         ]
 
 
-def build_flight_index(ortho_base: str, raw_base: str) -> FlightIndex:
-    """Discover flights from the orthomosaic and raw dirs, derive combos + ordering."""
+def build_flight_index(ortho_base: str, raw_base: str, exclusions: set[FlightCombination] = frozenset()) -> FlightIndex:
+    """Discover flights from the orthomosaic and raw dirs, derive combos + ordering.
+
+    Flights listed in `exclusions` are not processed.
+    """
     archive, raw = discover_flights(ortho_base, raw_base)
-    all_combinations = sorted(archive | raw)
-    build = raw - archive
+    excluded = {c for c in archive | raw if _exclusion_key(c) in exclusions}
+    all_combinations = sorted((archive | raw) - excluded)
+    build = raw - archive - excluded
 
     sites = [site for site, _, _ in all_combinations]
     years = [year for _, year, _ in all_combinations]
@@ -153,6 +198,7 @@ def build_flight_index(ortho_base: str, raw_base: str) -> FlightIndex:
         sites_sy=sites_sy,
         years_sy=years_sy,
         prev_flight=prev_flight,
+        excluded=sorted(excluded),
     )
 
 

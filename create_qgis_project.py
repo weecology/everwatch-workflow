@@ -221,7 +221,8 @@ def load_flight_index(working_dir: str) -> tools.FlightIndex:
         smcfg = yaml.safe_load(fp)
     ortho_base = os.path.join(working_dir, smcfg["orthomosaic_dir"])
     raw_base = os.path.join(working_dir, smcfg["raw_flight_dir"])
-    return tools.build_flight_index(ortho_base, raw_base)
+    exclude_file = os.path.join(here, smcfg["exclude_file"])
+    return tools.build_flight_index(ortho_base, raw_base, tools.load_exclusions(exclude_file))
 
 
 def add_orthomosaics(

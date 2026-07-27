@@ -26,7 +26,7 @@ rclone sync everglades2023:"Wading Bird 2023/Deliverables/" /blue/ewhite/evergla
 
 Once imagery arrives on the HPC as an orthomosaic, a nightly Snakemake workflow runs all of the steps for processing imagery, projecting geospatial data (for both analysis and web visualization), predicting birds, predicting nests, and pushing imagery to mapbox for web visualization.
 
-Snakemake processes any new data or data that has been updated while ignoring data that has already been processed. So a new when a new orthomosaic is synced that imagery will be processed and any combined files that depend on that imagery regenerated.
+Snakemake processes any new data or data that has been updated while ignoring data that has already been processed. So when a new orthomosaic is synced, that imagery is processed and any combined files that depend on it are regenerated.
 
 The workflow is run through a **profile** that sets the working dir, executor, and the
 resource/retry/conda flags — so you normally don't pass those on the command line. Pick
@@ -77,6 +77,21 @@ The output shapefiles for (4) contain the predicted nest polygon, site, date and
 3  CypressCity  04_29_2020           7
 4  CypressCity  04_01_2020           8
 ```
+
+### Leaving flights out
+
+To ignore a flight for whatever reason, included it `exclude.txt` next to the Snakefile, one per line as `year,site,flight`:
+
+```
+year,site,flight
+2026,Rhea_West,05_08_2026_B
+```
+
+The flight column is the flight name with the site prefix removed, keeping the event
+suffix if it has one. All processing is skipped for a listed flight, and the next flight
+at that site is aligned to the last flight we kept instead.
+
+This can be useful for flights where we need to do some manual processing, like tweaking orthomosaic parameters.
 
 ## Logs
 
