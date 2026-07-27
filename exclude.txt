@@ -1,3 +1,0 @@
-# Flights listed here are skipped by the workflow; the flight column is the
-# flight name without the site prefix, e.g. 05_08_2026_B.
-year,site,flight
