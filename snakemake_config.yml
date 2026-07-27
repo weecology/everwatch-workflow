@@ -8,3 +8,6 @@ test: true
 # Sub-directories under working_dir used to discover flights.
 orthomosaic_dir: "orthomosaics"
 raw_flight_dir: "open_drone_map/RawData/SkyScoutFlights"
+
+# Flights to leave out of the workflow.
+exclude_file: "exclude.txt"
