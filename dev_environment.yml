@@ -1,9 +1,12 @@
 name: Zooniverse
 channels: [conda-forge]
 dependencies:
-  - python
+  - python=3.12
   - yapf
   - black
   - pytest-cov
   - pytest-xdist
   - pdoc
+  - pytest
+  - requests
+  - boto3

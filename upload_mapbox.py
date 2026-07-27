@@ -3,7 +3,7 @@ import requests
 import boto3
 from botocore.exceptions import NoCredentialsError
 import sys
-import tomli
+import tomllib
 
 
 class MapboxUploader:
@@ -54,10 +54,10 @@ class MapboxUploader:
             raise Exception(f"Failed to retrieve upload status. Status code: {response.status_code}")
 
 
-def get_credentials():
+def get_credentials(path="/blue/ewhite/everglades/mapbox.ini"):
     """Get credentials from mapbox.ini"""
-    with open("/blue/ewhite/everglades/mapbox.ini", "rb") as f:
-        toml_dict = tomli.load(f)
+    with open(path, "rb") as f:
+        toml_dict = tomllib.load(f)
         access_token = toml_dict['mapbox']['access-token']
     return access_token
 

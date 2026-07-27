@@ -3,7 +3,8 @@ channels:
   - conda-forge
 channel_priority: strict
 dependencies:
-  - python
+  # tomllib needs Python 3.11 or newer.
+  - python=3.12
   - gdal
   - geopandas
   - hdf5
@@ -15,8 +16,10 @@ dependencies:
   - pyogrio
   - pyproj
   - rasterio
+  - requests
   - scipy
   - pip
   - pip:
       - rio-mbtiles
       - boto3
+      - botocore
