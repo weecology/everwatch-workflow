@@ -3,18 +3,19 @@
 
 import argparse
 import csv
-from pathlib import Path
+
+import tools
 
 parser = argparse.ArgumentParser(description="Convert WISPR CSV to ODM geo.txt")
 parser.add_argument("root_dir", help="Root directory to search for exif_image_list.csv")
 parser.add_argument("output_txt", help="Output geo.txt file for ODM")
 args = parser.parse_args()
 
-csv_files = list(Path(args.root_dir).rglob("exif_image_list.csv"))
-if len(csv_files) == 0:
+csv_file = tools.find_ppk_csv(args.root_dir)
+if csv_file is None:
     raise SystemExit("Error: No exif_image_list.csv found")
 
-with open(csv_files[0]) as infile, open(args.output_txt, "w") as outfile:
+with open(csv_file) as infile, open(args.output_txt, "w") as outfile:
     reader = csv.DictReader(infile)
     outfile.write("EPSG:4326\n")
 

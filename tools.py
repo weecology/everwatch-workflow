@@ -79,6 +79,18 @@ def discover_flights(ortho_base: str, raw_base: str) -> tuple[set[FlightCombinat
     return archive, raw
 
 
+def find_ppk_csv(root: str | os.PathLike) -> Path | None:
+    """The WISPR PPK file ODM will be geotagged from, or None if there isn't one.
+
+    A flight folder can hold more than one solution (e.g. CORS/ and VIRT/);
+    prefer the virtual base station one.
+    """
+    found = sorted(Path(root).rglob("exif_image_list.csv"))
+    virtual = [path for path in found if "virt" in str(path.relative_to(root)).lower()]
+    candidates = virtual or found
+    return candidates[0] if candidates else None
+
+
 def load_exclusions(path: str | os.PathLike) -> set[FlightCombination]:
     """Load flight exclusions from a CSV
 
@@ -104,6 +116,31 @@ def load_exclusions(path: str | os.PathLike) -> set[FlightCombination]:
                 continue
             exclusions.add((site, year, flight))
     return exclusions
+
+
+EXCLUDE_HEADER = ("# Flights listed here are skipped by the workflow; the flight column is the\n"
+                  "# flight name without the site prefix, e.g. 05_08_2026_B.\n"
+                  "year,site,flight\n")
+
+
+def add_exclusion(path: str | os.PathLike, combination: FlightCombination,
+                  reason: str | None = None) -> bool:
+    """Add a flight to the exclude file, writing the file if it isn't there yet.
+
+    Returns False if the flight was already listed.
+    """
+    path = Path(path)
+    site, year, flight = _exclusion_key(combination)
+    if (site, year, flight) in load_exclusions(path):
+        return False
+
+    existing = path.read_text() if path.exists() else EXCLUDE_HEADER
+    if not existing.endswith("\n"):
+        existing += "\n"
+    if reason:
+        existing += f"# {reason}\n"
+    path.write_text(f"{existing}{year},{site},{flight}\n")
+    return True
 
 
 def _exclusion_key(combination: FlightCombination) -> FlightCombination:

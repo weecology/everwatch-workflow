@@ -80,7 +80,8 @@ The output shapefiles for (4) contain the predicted nest polygon, site, date and
 
 ### Leaving flights out
 
-To ignore a flight for whatever reason, included it `exclude.txt` next to the Snakefile, one per line as `year,site,flight`:
+To ignore a flight for whatever reason, included it in `exclude.txt` next to 
+the Snakefile, one per line as `year,site,flight`.
 
 ```
 year,site,flight
@@ -92,6 +93,10 @@ suffix if it has one. All processing is skipped for a listed flight, and the nex
 at that site is aligned to the last flight we kept instead.
 
 This can be useful for flights where we need to do some manual processing, like tweaking orthomosaic parameters.
+
+Before running ODM, `check_flight_gps.py` checks that most of a flight's images have coordinates. Failed flights
+are added to `exclude.txt`; remove once fixed.
+
 
 ## Logs
 

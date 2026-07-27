@@ -26,9 +26,16 @@ if [[ ! -d "${SOURCE_FOLDER}" ]]; then
     exit 1
 fi
 
+SCRIPT_DIR="$(dirname "$(realpath "$0")")"
+
+python "${SCRIPT_DIR}/check_flight_gps.py" "${SOURCE_FOLDER}" \
+    --exclude-file "${SCRIPT_DIR}/exclude.txt" || {
+    echo "Not enough geo-referenced images in ${SOURCE_FOLDER}; skipping ODM for ${FLIGHT}" >&2
+    exit 1
+}
+
 source /blue/ewhite/everglades/open_drone_map/odm_env/bin/activate
 
-SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 TARGET_DIR="${SCRATCH_DIR}/${FLIGHT}"
 
 printenv | grep -i slurm | sort
@@ -59,7 +66,7 @@ echo "Running ODM on ${TARGET_DIR}"
 apptainer run --nv --bind "${TARGET_DIR}:/project" \
     "$ODM_SIF" \
     --project-path /project \
-    --max-concurrency 8 \
+    --max-concurrency 4 \
     --orthophoto-resolution 1 \
     --optimize-disk-space \
     --rerun-all \
