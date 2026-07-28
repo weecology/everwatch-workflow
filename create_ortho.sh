@@ -71,6 +71,8 @@ apptainer run --nv --bind "${TARGET_DIR}:/project" \
     --optimize-disk-space \
     --rerun-all \
     --build-overviews \
+    --split 400 \
+    --split-overlap 100 \
     --cog
 
 # Clean up images
