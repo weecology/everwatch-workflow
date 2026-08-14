@@ -9,8 +9,11 @@ the check passes when "most" of the images are geo-referenced. Only top-level JP
 looked at, which is what create_ortho.sh copies for ODM. By default, 90% is the minimum
 acceptable fraction.
 
+With --image-list, the names of the geo-referenced images are written to a file that
+create_ortho.sh uses as a manifest. Images with no determinable coordinates are dropped.
+
 Usage:
-    python check_flight_gps.py FLIGHT_DIR [--fraction 0.9]
+    python check_flight_gps.py FLIGHT_DIR [--fraction 0.9] [--image-list PATH]
 
 Exit status is 0 if the flight can go to ODM, 1 if it should not.
 """
@@ -19,12 +22,32 @@ import argparse
 import csv
 import sys
 from pathlib import Path
+from typing import NamedTuple
 
 from PIL import ExifTags, Image
 
 import tools
+from exclude_flight import exclude_flight
 
 JPEG_SUFFIXES = {".jpg", ".jpeg"}
+
+
+class FlightImages(NamedTuple):
+    """A flight's images, split by whether coordinates were found for them."""
+
+    from_ppk: list[Path]
+    exif_only: list[Path]
+    missing: list[Path]
+    ppk_csv: Path | None = None
+
+    @property
+    def georeferenced(self) -> list[Path]:
+        """Images ODM will have a position for, in flight order."""
+        return sorted(self.from_ppk + self.exif_only)
+
+    @property
+    def total(self) -> int:
+        return len(self.from_ppk) + len(self.exif_only) + len(self.missing)
 
 
 def flight_jpegs(flight_dir: Path) -> list[Path]:
@@ -45,22 +68,25 @@ def has_exif_gps(path: Path) -> bool:
     return bool(gps.get(2)) and bool(gps.get(4))
 
 
-def ppk_images(csv_path: Path) -> set[str]:
-    """Image filenames listed in a WISPR PPK file."""
-    with csv_path.open(newline="") as handle:
-        return {row["image_name"] for row in csv.DictReader(handle)}
-
-
-def can_georeference(flight_dir: Path, fraction: float = 0.9) -> bool:
-    """True if enough of the flight's images are geo-referenced for ODM to use.
-
-    Prints where the coordinates came from and which images have none.
-    """
-    images = flight_jpegs(flight_dir)
-    if not images:
-        print(f"{flight_dir.name}: no images found", file=sys.stderr)
+def has_ppk_coordinates(row: dict[str, str]) -> bool:
+    """True if a PPK row holds a latitude and longitude that read as numbers."""
+    try:
+        float(row["latitude"])
+        float(row["longitude"])
+    except (KeyError, TypeError, ValueError):
         return False
+    return True
 
+
+def ppk_images(csv_path: Path) -> set[str]:
+    """Image filenames that a WISPR PPK file gives coordinates for."""
+    with csv_path.open(newline="") as handle:
+        return {row["image_name"] for row in csv.DictReader(handle) if has_ppk_coordinates(row)}
+
+
+def sort_images(flight_dir: Path) -> FlightImages:
+    """Group a flight's images by where their coordinates come from, if anywhere."""
+    images = flight_jpegs(flight_dir)
     csv_path = tools.find_ppk_csv(flight_dir)
     ppk = ppk_images(csv_path) if csv_path else set()
 
@@ -68,33 +94,43 @@ def can_georeference(flight_dir: Path, fraction: float = 0.9) -> bool:
     exif_only = [p for p in images if p.name not in ppk and has_exif_gps(p)]
     georeferenced = set(from_ppk) | set(exif_only)
     missing = [p for p in images if p not in georeferenced]
+    return FlightImages(from_ppk, exif_only, missing, csv_path)
 
-    where = csv_path.parent.relative_to(flight_dir) if csv_path else "no PPK file"
-    print(f"{flight_dir.name}: {len(images)} images | PPK {len(from_ppk)} ({where}) | "
-          f"EXIF only {len(exif_only)} | no geo-reference {len(missing)}")
-    for path in missing:
-        print(f"    no geo-reference: {path.name}")
 
-    if not georeferenced or len(georeferenced) / len(images) < fraction:
-        print(f"{flight_dir.name}: only {len(georeferenced)}/{len(images)} images are "
+def write_image_list(path: Path, images: list[Path]) -> None:
+    """Write image names, one per line, for `rsync --files-from`."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("".join(f"{image.name}\n" for image in images))
+
+
+def can_georeference(flight_dir: Path, fraction: float = 0.9,
+                     image_list: Path | None = None) -> bool:
+    """True if enough of the flight's images are geo-referenced for ODM to use.
+
+    Prints where the coordinates came from and which images have none. On success,
+    writes the geo-referenced image names to `image_list` if one was given.
+    """
+    images = sort_images(flight_dir)
+    if not images.total:
+        print(f"{flight_dir.name}: no images found", file=sys.stderr)
+        return False
+
+    where = images.ppk_csv.parent.relative_to(flight_dir) if images.ppk_csv else "no PPK file"
+    print(f"{flight_dir.name}: {images.total} images | PPK {len(images.from_ppk)} ({where}) | "
+          f"EXIF only {len(images.exif_only)} | no geo-reference {len(images.missing)}")
+    for path in images.missing:
+        print(f"    no geo-reference, will not be sent to ODM: {path.name}")
+
+    georeferenced = images.georeferenced
+    if not georeferenced or len(georeferenced) / images.total < fraction:
+        print(f"{flight_dir.name}: only {len(georeferenced)}/{images.total} images are "
               f"geo-referenced, need {fraction:.0%}", file=sys.stderr)
         return False
+
+    if image_list is not None:
+        write_image_list(image_list, georeferenced)
+        print(f"{flight_dir.name}: listed {len(georeferenced)} images for ODM in {image_list}")
     return True
-
-
-def exclude_flight(exclude_file: Path, flight_dir: Path) -> None:
-    """Add the flight to the exclude file so later runs skip it."""
-    site, flight = flight_dir.parent.name, flight_dir.name
-    try:
-        combination = (site, tools.flight_year(flight), flight)
-    except ValueError:
-        print(f"Cannot parse a year from {flight}, so it can't be excluded", file=sys.stderr)
-        return
-    if tools.add_exclusion(exclude_file, combination,
-                           reason=f"{flight}: too few geo-referenced images"):
-        print(f"Added {flight} to {exclude_file}; later runs will skip it")
-    else:
-        print(f"{flight} is already listed in {exclude_file}")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -106,15 +142,18 @@ def main(argv: list[str] | None = None) -> int:
                     help="Fraction of images that must be geo-referenced (default 0.9).")
     ap.add_argument("--exclude-file", type=Path,
                     help="Add the flight to this exclude file if the check fails.")
+    ap.add_argument("--image-list", type=Path,
+                    help="Write the geo-referenced image names here, for ODM to be run on.")
     args = ap.parse_args(argv)
 
     if not args.flight_dir.is_dir():
         sys.exit(f"Not a directory: {args.flight_dir}")
 
-    if can_georeference(args.flight_dir, args.fraction):
+    if can_georeference(args.flight_dir, args.fraction, args.image_list):
         return 0
     if args.exclude_file:
-        exclude_flight(args.exclude_file, args.flight_dir)
+        exclude_flight(args.exclude_file, args.flight_dir,
+                       reason=f"{args.flight_dir.name}: too few geo-referenced images")
     return 1
 
 

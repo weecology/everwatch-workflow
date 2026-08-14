@@ -27,31 +27,32 @@ if [[ ! -d "${SOURCE_FOLDER}" ]]; then
 fi
 
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
+TARGET_DIR="${SCRATCH_DIR}/${FLIGHT}"
+EXCLUDE_FILE="${SCRIPT_DIR}/exclude.txt"
+IMAGE_LIST="${TARGET_DIR}/image_list.txt"
+
+mkdir -p "${TARGET_DIR}/code"
 
 python "${SCRIPT_DIR}/check_flight_gps.py" "${SOURCE_FOLDER}" \
-    --exclude-file "${SCRIPT_DIR}/exclude.txt" || {
+    --exclude-file "${EXCLUDE_FILE}" --image-list "${IMAGE_LIST}" || {
     echo "Not enough geo-referenced images in ${SOURCE_FOLDER}; skipping ODM for ${FLIGHT}" >&2
     exit 1
 }
 
 source /blue/ewhite/everglades/open_drone_map/odm_env/bin/activate
 
-TARGET_DIR="${SCRATCH_DIR}/${FLIGHT}"
-
 printenv | grep -i slurm | sort
-
-mkdir -p "${TARGET_DIR}/code"
 
 
 # Perform PPK geotagging
 python "${SCRIPT_DIR}/wispr_to_odm_ppk.py" "${SOURCE_FOLDER}" "${TARGET_DIR}/code/geo.txt" || \
 { echo "Failed to find a PPK coordinate file. Processing will use EXIF GPS data only."; }
 
-# Copy JPG files
-echo "Copying images from ${SOURCE_FOLDER} to ${TARGET_DIR}/code/images"
+# Copy only geo-referenced images listed by check_flight_gps.py
+echo "Copying $(wc -l < "${IMAGE_LIST}") images from ${SOURCE_FOLDER} to ${TARGET_DIR}/code/images"
 mkdir -p "${TARGET_DIR}/code/images"
-rsync -av --include='*.JPG' --include='*.jpg' --exclude='*' "${SOURCE_FOLDER}/" "${TARGET_DIR}/code/images/" || \
-{ echo "Warning: No JPG files found in ${SOURCE_FOLDER}"; exit 1; }
+rsync -av --files-from="${IMAGE_LIST}" "${SOURCE_FOLDER}/" "${TARGET_DIR}/code/images/" || \
+{ echo "Failed to copy the images listed in ${IMAGE_LIST}"; exit 1; }
 
 # Run GCP detection
 mkdir -p "${TARGET_DIR}/gcp"
@@ -61,9 +62,11 @@ gcp-detect "${SOURCE_FOLDER}" --output "${TARGET_DIR}/gcp" gcps.csv && \
 
 module load cuda
 
-# Run ODM with the target directory as project path
+# Run ODM with the target directory as project path.
+# ODM records how the run ended in log.json inside the project folder.
+ODM_LOG_JSON="${TARGET_DIR}/code/log.json"
 echo "Running ODM on ${TARGET_DIR}"
-apptainer run --nv --bind "${TARGET_DIR}:/project" \
+if ! apptainer run --nv --bind "${TARGET_DIR}:/project" \
     "$ODM_SIF" \
     --project-path /project \
     --max-concurrency 4 \
@@ -73,7 +76,21 @@ apptainer run --nv --bind "${TARGET_DIR}:/project" \
     --build-overviews \
     --split 400 \
     --split-overlap 100 \
-    --cog
+    --cog; then
+
+    # Some ODM failures are about the images themselves, so a rerun would fail the
+    # same way; exclude those flights. Everything else (out of memory, job timeout,
+    # node problems) is left alone so the workflow can retry it.
+    if [[ -f "${ODM_LOG_JSON}" ]] && grep -Eq \
+        "Not enough supported images|Not enough images in selected band|could not process this dataset using the current settings" \
+        "${ODM_LOG_JSON}"; then
+        python "${SCRIPT_DIR}/exclude_flight.py" "${SOURCE_FOLDER}" \
+            --exclude-file "${EXCLUDE_FILE}" \
+            --reason "${FLIGHT}: ODM could not build an orthomosaic from these images"
+    fi
+    echo "ODM failed for ${FLIGHT}; see this rule's log" >&2
+    exit 1
+fi
 
 # Clean up images
 echo "Removing image folder ${TARGET_DIR}/code/images"

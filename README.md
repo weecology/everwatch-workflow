@@ -94,8 +94,14 @@ at that site is aligned to the last flight we kept instead.
 
 This can be useful for flights where we need to do some manual processing, like tweaking orthomosaic parameters.
 
-Before running ODM, `check_flight_gps.py` checks that most of a flight's images have coordinates. Failed flights
-are added to `exclude.txt`; remove once fixed.
+Before running ODM, `check_flight_gps.py` checks that most of a flight's images have coordinates (90% by
+default). Failed flights are added to `exclude.txt`; remove once fixed.
+
+The same check writes `image_list.txt`, and ODM is run only on the images in it. Images with no
+coordinates are dropped as ODM will not split large reconstructions if even a single image is not geo-referenced.
+
+If ODM itself fails in a way that says the images cannot be used, the flight is added to `exclude.txt`
+too. Other failures, such as running out of memory or time, are left alone so the workflow can retry them.
 
 
 ## Logs
