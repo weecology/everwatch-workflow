@@ -123,7 +123,7 @@ rule create_orthomosaics:
         slurm_extra=lambda wildcards: "--gpus=1" if _will_build_orthomosaic(wildcards) else ""
     threads: lambda wildcards: 8 if _will_build_orthomosaic(wildcards) else 1
     resources:
-        mem_mb=lambda wildcards: 131072 if _will_build_orthomosaic(wildcards) else 2048,
+        mem_mb=lambda wildcards: 262144 if _will_build_orthomosaic(wildcards) else 2048,
         runtime=lambda wildcards: 2880 if _will_build_orthomosaic(wildcards) else 10
     shell:
         "bash create_ortho.sh {wildcards.site:q} {wildcards.year:q} {wildcards.flight:q} {params.working_dir:q} {params.scratch_dir:q} {params.raw_dir:q} > {log:q} 2>&1"
@@ -143,7 +143,7 @@ rule align_mosaics:
     threads: 12
     resources:
         mem_mb=32000,
-        runtime=30
+        runtime=60
     shell:
         # These parameters have been tested to work reasonably well;
         # if you change the orthomosaccic resolution, you may need to
