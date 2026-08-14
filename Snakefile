@@ -19,9 +19,11 @@ if not os.path.isabs(exclude_file):
     exclude_file = os.path.join(workflow.basedir, exclude_file)
 
 # Discover flights and derive all combos + chronological ordering. Base dirs come from config.
+# `raw_flight_dir` may be a wildcard pattern, so each drone can keep its flights in
+# its own folder (e.g. SkyScoutFlights, ParrotFlights)
 ortho_base = f"{working_dir}/{config['orthomosaic_dir']}"
-raw_base = f"{working_dir}/{config['raw_flight_dir']}"
-flight_index = tools.build_flight_index(ortho_base, raw_base,
+raw_bases = tools.resolve_raw_bases(working_dir, config["raw_flight_dir"])
+flight_index = tools.build_flight_index(ortho_base, raw_bases,
                                         tools.load_exclusions(exclude_file))
 SITES, YEARS, FLIGHTS = flight_index.sites, flight_index.years, flight_index.flights
 SITES_SY, YEARS_SY = flight_index.sites_sy, flight_index.years_sy
@@ -115,13 +117,16 @@ rule create_orthomosaics:
     params:
         working_dir=working_dir,
         scratch_dir=f"{working_dir}/open_drone_map/ODM_Processed",
+        # Which drone folder holds this flight's images
+        raw_dir=lambda wildcards: flight_index.raw_dir(wildcards.site, wildcards.year,
+                                                       wildcards.flight),
         slurm_extra=lambda wildcards: "--gpus=1" if _will_build_orthomosaic(wildcards) else ""
     threads: lambda wildcards: 8 if _will_build_orthomosaic(wildcards) else 1
     resources:
         mem_mb=lambda wildcards: 131072 if _will_build_orthomosaic(wildcards) else 2048,
         runtime=lambda wildcards: 2880 if _will_build_orthomosaic(wildcards) else 10
     shell:
-        "bash create_ortho.sh {wildcards.site:q} {wildcards.year:q} {wildcards.flight:q} {params.working_dir:q} {params.scratch_dir:q} > {log:q} 2>&1"
+        "bash create_ortho.sh {wildcards.site:q} {wildcards.year:q} {wildcards.flight:q} {params.working_dir:q} {params.scratch_dir:q} {params.raw_dir:q} > {log:q} 2>&1"
 
 
 rule align_mosaics:

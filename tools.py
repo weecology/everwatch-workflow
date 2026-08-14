@@ -1,7 +1,9 @@
 import csv
 import datetime
+import glob
 import os
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import NamedTuple
@@ -57,14 +59,38 @@ def flight_date(path: str) -> datetime.date:
     return datetime.date(int(f.year), int(f.month), int(f.day))
 
 
-def discover_flights(ortho_base: str, raw_base: str) -> tuple[set[FlightCombination], set[FlightCombination]]:
+def resolve_raw_bases(working_dir: str | os.PathLike, pattern: str) -> list[Path]:
+    """Raw flight folders under `working_dir` matching `pattern`.
+
+    `pattern` is relative to `working_dir` and may contain shell wildcards, so one
+    setting can cover a folder per drone, e.g. "open_drone_map/RawData/*Flights"
+    matches SkyScoutFlights, ParrotFlights and any sibling added later. A pattern
+    without wildcards names a single folder.
+
+    Only directories are returned. An empty result is fine (nothing to build from
+    raw imagery); the caller decides whether that is a problem.
+    """
+    matches = glob.glob(os.path.join(str(working_dir), pattern))
+    return sorted(Path(p) for p in matches if os.path.isdir(p))
+
+
+def discover_flights(
+    ortho_base: str,
+    raw_bases: str | os.PathLike | Iterable[str | os.PathLike],
+) -> tuple[set[FlightCombination], dict[FlightCombination, str]]:
     """Find (site, year, flight) combinations from the orthomosaic and raw dirs.
 
-    Returns (archive_combinations, raw_combinations):
+    `raw_bases` is one raw folder or several (one per drone); each is laid out the
+    same way, as <raw_base>/<site>/<flight>.
+
+    Returns (archive_combinations, raw_directories):
       * archive: existing orthomosaics at <ortho_base>/<year>/<site>/<flight>.tif;
         year and site come from the directory layout.
-      * raw: flight folders at <raw_base>/<site>/<flight>; the year is parsed from
-        the flight name.
+      * raw: flight folders at <raw_base>/<site>/<flight>, mapped to the folder they
+        were found in; the year is parsed from the flight name.
+
+    Raises ValueError if the same flight appears under more than one raw folder,
+    because both would build the same orthomosaic path.
     """
     archive: set[FlightCombination] = set()
     for tif in sorted(Path(ortho_base).glob("*/*/*.tif")):
@@ -72,9 +98,22 @@ def discover_flights(ortho_base: str, raw_base: str) -> tuple[set[FlightCombinat
             continue
         archive.add((tif.parent.name, tif.parent.parent.name, tif.stem))
 
-    raw: set[FlightCombination] = set()
-    for flight_dir in sorted(p for p in Path(raw_base).glob("*/*") if p.is_dir()):
-        raw.add((flight_dir.parent.name, flight_year(flight_dir.name), flight_dir.name))
+    if isinstance(raw_bases, (str, os.PathLike)):
+        raw_bases = [raw_bases]
+
+    raw: dict[FlightCombination, str] = {}
+    for raw_base in raw_bases:
+        for flight_dir in sorted(p for p in Path(raw_base).glob("*/*") if p.is_dir()):
+            combination = (flight_dir.parent.name, flight_year(flight_dir.name),
+                           flight_dir.name)
+            if combination in raw:
+                site, year, flight = combination
+                raise ValueError(
+                    f"Flight {flight} (site {site}, {year}) is in two raw folders:\n"
+                    f"  {raw[combination]}\n  {flight_dir}\n"
+                    "Remove one of them, or exclude the flight in the exclude file."
+                )
+            raw[combination] = str(flight_dir)
 
     return archive, raw
 
@@ -163,6 +202,9 @@ class FlightIndex:
     `sites_sy`/`years_sy` are unique site/year pairs.
 
     `excluded` holds the flights that were found but dropped via exclude.txt
+
+    `raw_dirs` maps a flight to the folder holding its images, for flights that
+    have raw imagery. Flights that only exist as an archived orthomosaic are absent.
     """
 
     all_combinations: list[FlightCombination]
@@ -174,6 +216,7 @@ class FlightIndex:
     years_sy: list[str]
     prev_flight: dict[str, str | None]
     excluded: list[FlightCombination]
+    raw_dirs: dict[FlightCombination, str]
 
     def previous_flight(self, flight: str) -> str | None:
         """The chronologically preceding flight at the same site/year, or None."""
@@ -189,6 +232,10 @@ class FlightIndex:
         """True if this flight needs ODM (raw imagery with no existing orthomosaic)."""
         return (site, year, flight) in self.build
 
+    def raw_dir(self, site: str, year: str, flight: str) -> str:
+        """Folder holding this flight's images, or "" if it has no raw imagery."""
+        return self.raw_dirs.get((site, year, flight), "")
+
     def primary_flights(self, site: str, year: str) -> list[str]:
         """Flight names for the given site/year whose event is the primary survey."""
         return [
@@ -198,12 +245,18 @@ class FlightIndex:
         ]
 
 
-def build_flight_index(ortho_base: str, raw_base: str, exclusions: set[FlightCombination] = frozenset()) -> FlightIndex:
+def build_flight_index(
+    ortho_base: str,
+    raw_bases: str | os.PathLike | Iterable[str | os.PathLike],
+    exclusions: set[FlightCombination] = frozenset(),
+) -> FlightIndex:
     """Discover flights from the orthomosaic and raw dirs, derive combos + ordering.
 
+    `raw_bases` is one raw flight folder or several (one per drone type).
     Flights listed in `exclusions` are not processed.
     """
-    archive, raw = discover_flights(ortho_base, raw_base)
+    archive, raw_dirs = discover_flights(ortho_base, raw_bases)
+    raw = set(raw_dirs)
     excluded = {c for c in archive | raw if _exclusion_key(c) in exclusions}
     all_combinations = sorted((archive | raw) - excluded)
     build = raw - archive - excluded
@@ -236,6 +289,7 @@ def build_flight_index(ortho_base: str, raw_base: str, exclusions: set[FlightCom
         years_sy=years_sy,
         prev_flight=prev_flight,
         excluded=sorted(excluded),
+        raw_dirs={c: path for c, path in raw_dirs.items() if c not in excluded},
     )
 
 

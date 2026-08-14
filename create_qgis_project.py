@@ -220,9 +220,9 @@ def load_flight_index(working_dir: str) -> tools.FlightIndex:
     with open(os.path.join(here, "snakemake_config.yml")) as fp:
         smcfg = yaml.safe_load(fp)
     ortho_base = os.path.join(working_dir, smcfg["orthomosaic_dir"])
-    raw_base = os.path.join(working_dir, smcfg["raw_flight_dir"])
+    raw_bases = tools.resolve_raw_bases(working_dir, smcfg["raw_flight_dir"])
     exclude_file = os.path.join(here, smcfg["exclude_file"])
-    return tools.build_flight_index(ortho_base, raw_base, tools.load_exclusions(exclude_file))
+    return tools.build_flight_index(ortho_base, raw_bases, tools.load_exclusions(exclude_file))
 
 
 def add_orthomosaics(

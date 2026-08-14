@@ -1,16 +1,21 @@
 #!/bin/bash
-# Usage: bash create_ortho.sh <site> <year> <flight> <working_dir> <scratch_dir>
+# Usage: bash create_ortho.sh <site> <year> <flight> <working_dir> <scratch_dir> [raw_dir]
+#
+# raw_dir is the folder holding this flight's images. The workflow passes it because
+# each drone keeps its flights in its own folder under RawData; it is empty for
+# flights that only exist as an archived orthomosaic.
 
 set -euo pipefail
 
-SITE="${1:?Usage: $0 <site> <year> <flight> <working_dir> <scratch_dir>}"
-YEAR="${2:?Usage: $0 <site> <year> <flight> <working_dir> <scratch_dir>}"
-FLIGHT="${3:?Usage: $0 <site> <year> <flight> <working_dir> <scratch_dir>}"
-WORKING_DIR="${4:?Usage: $0 <site> <year> <flight> <working_dir> <scratch_dir>}"
-SCRATCH_DIR="${5:?Usage: $0 <site> <year> <flight> <working_dir> <scratch_dir>}"
+USAGE="Usage: $0 <site> <year> <flight> <working_dir> <scratch_dir> [raw_dir]"
+SITE="${1:?$USAGE}"
+YEAR="${2:?$USAGE}"
+FLIGHT="${3:?$USAGE}"
+WORKING_DIR="${4:?$USAGE}"
+SCRATCH_DIR="${5:?$USAGE}"
+SOURCE_FOLDER="${6:-}"
 ODM_SIF="/blue/ewhite/everglades/open_drone_map/odm.sif"
 
-SOURCE_FOLDER="${WORKING_DIR}/open_drone_map/RawData/SkyScoutFlights/${SITE}/${FLIGHT}"
 ARCHIVE_PATH="${WORKING_DIR}/orthomosaics/${YEAR}/${SITE}/${FLIGHT}.tif"
 OUTPUT_PATH="${WORKING_DIR}/orthomosaics_work/${YEAR}/${SITE}/${FLIGHT}.tif"
 
@@ -19,6 +24,11 @@ mkdir -p "$(dirname "${OUTPUT_PATH}")"
 if [[ -f "${ARCHIVE_PATH}" ]]; then
     ln -sfn "${ARCHIVE_PATH}" "${OUTPUT_PATH}"
     exit 0
+fi
+
+if [[ -z "${SOURCE_FOLDER}" ]]; then
+    echo "No archived ortho (${ARCHIVE_PATH}) and no raw image folder was given for ${FLIGHT}" >&2
+    exit 1
 fi
 
 if [[ ! -d "${SOURCE_FOLDER}" ]]; then

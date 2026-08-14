@@ -7,7 +7,11 @@ test: true
 
 # Sub-directories under working_dir used to discover flights.
 orthomosaic_dir: "orthomosaics"
-raw_flight_dir: "open_drone_map/RawData/SkyScoutFlights"
+
+# Where the raw images live. Wildcards are allowed, so each drone can have its own
+# folder ending in "Flights". Each folder is laid out as <folder>/<site>/<flight>.
+# A flight must appear in only one of them.
+raw_flight_dir: "open_drone_map/RawData/*Flights"
 
 # Flights to leave out of the workflow.
 exclude_file: "exclude.txt"
