@@ -51,18 +51,15 @@ python "${SCRIPT_DIR}/check_flight_gps.py" "${SOURCE_FOLDER}" \
 
 source /blue/ewhite/everglades/open_drone_map/odm_env/bin/activate
 
-printenv | grep -i slurm | sort
-
-
 # Perform PPK geotagging
 python "${SCRIPT_DIR}/wispr_to_odm_ppk.py" "${SOURCE_FOLDER}" "${TARGET_DIR}/code/geo.txt" || \
 { echo "Failed to find a PPK coordinate file. Processing will use EXIF GPS data only."; }
 
 # Copy only geo-referenced images listed by check_flight_gps.py
 echo "Copying $(wc -l < "${IMAGE_LIST}") images from ${SOURCE_FOLDER} to ${TARGET_DIR}/code/images"
-mkdir -p "${TARGET_DIR}/code/images"
 # Clear the folder first to avoid stale images from a previous failed run
 rm -rf "${TARGET_DIR}/code/images"
+mkdir -p "${TARGET_DIR}/code/images"
 rsync -av --files-from="${IMAGE_LIST}" "${SOURCE_FOLDER}/" "${TARGET_DIR}/code/images/" || \
 { echo "Failed to copy the images listed in ${IMAGE_LIST}"; exit 1; }
 
@@ -72,15 +69,11 @@ gcp-detect "${SOURCE_FOLDER}" --output "${TARGET_DIR}/gcp" gcps.csv && \
     cp "${TARGET_DIR}/gcp/gcp_list.txt" "${TARGET_DIR}/code/gcp_list.txt" || \
     echo "No GCPs found, proceeding without."
 
-# Unload the environment to avoid conflicts inside the container. It seems
-# the host env can pollute the environment and cause errors late into 
-# processing that are actually unrelated to the imagery. Note this is not
-# a conda environment, it's a venv from the `source` earlier in the script.
-deactivate
-module load cuda
-
 # Run ODM with the target directory as project path.
 # ODM records how the run ended in log.json inside the project folder.
+
+module load cuda
+
 ODM_LOG_JSON="${TARGET_DIR}/code/log.json"
 echo "Running ODM on ${TARGET_DIR}"
 if ! apptainer run --nv --bind "${TARGET_DIR}:/project" \
