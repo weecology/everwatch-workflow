@@ -72,6 +72,11 @@ gcp-detect "${SOURCE_FOLDER}" --output "${TARGET_DIR}/gcp" gcps.csv && \
     cp "${TARGET_DIR}/gcp/gcp_list.txt" "${TARGET_DIR}/code/gcp_list.txt" || \
     echo "No GCPs found, proceeding without."
 
+# Unload the environment to avoid conflicts inside the container. It seems
+# the host env can pollute the environment and cause errors late into 
+# processing that are actually unrelated to the imagery. Note this is not
+# a conda environment, it's a venv from the `source` earlier in the script.
+deactivate
 module load cuda
 
 # Run ODM with the target directory as project path.
