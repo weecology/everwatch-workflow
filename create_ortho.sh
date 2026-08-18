@@ -61,6 +61,8 @@ python "${SCRIPT_DIR}/wispr_to_odm_ppk.py" "${SOURCE_FOLDER}" "${TARGET_DIR}/cod
 # Copy only geo-referenced images listed by check_flight_gps.py
 echo "Copying $(wc -l < "${IMAGE_LIST}") images from ${SOURCE_FOLDER} to ${TARGET_DIR}/code/images"
 mkdir -p "${TARGET_DIR}/code/images"
+# Clear the folder first to avoid stale images from a previous failed run
+rm -rf "${TARGET_DIR}/code/images"
 rsync -av --files-from="${IMAGE_LIST}" "${SOURCE_FOLDER}/" "${TARGET_DIR}/code/images/" || \
 { echo "Failed to copy the images listed in ${IMAGE_LIST}"; exit 1; }
 
@@ -85,6 +87,7 @@ if ! apptainer run --nv --bind "${TARGET_DIR}:/project" \
     --rerun-all \
     --build-overviews \
     --split 400 \
+    --skip-3dmodel \
     --split-overlap 100 \
     --cog; then
 
