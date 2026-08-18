@@ -143,7 +143,7 @@ rule align_mosaics:
     threads: 12
     resources:
         mem_mb=32000,
-        runtime=60
+        runtime=240
     shell:
         # These parameters have been tested to work reasonably well;
         # if you change the orthomosaccic resolution, you may need to
@@ -217,7 +217,7 @@ rule predict_birds:
         slurm_extra="--gpus=1"
     threads: 1
     resources:
-        runtime=120,
+        runtime=240,
         mem_mb=40000,
         predict_birds_slot=1
     shell:
