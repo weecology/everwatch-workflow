@@ -19,6 +19,8 @@ ODM_SIF="/blue/ewhite/everglades/open_drone_map/odm.sif"
 ARCHIVE_PATH="${WORKING_DIR}/orthomosaics/${YEAR}/${SITE}/${FLIGHT}.tif"
 OUTPUT_PATH="${WORKING_DIR}/orthomosaics_work/${YEAR}/${SITE}/${FLIGHT}.tif"
 
+printenv | grep -i slurm | sort
+
 # Check if existing orthomosaic, and if so break early
 mkdir -p "$(dirname "${OUTPUT_PATH}")"
 if [[ -f "${ARCHIVE_PATH}" ]]; then
