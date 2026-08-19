@@ -119,12 +119,15 @@ rule create_orthomosaics:
         scratch_dir=f"{working_dir}/open_drone_map/ODM_Processed",
         # Which drone folder holds this flight's images
         raw_dir=lambda wildcards: flight_index.raw_dir(wildcards.site, wildcards.year,
-                                                       wildcards.flight),
-        slurm_extra=lambda wildcards: "--gpus=1" if _will_build_orthomosaic(wildcards) else ""
+                                                       wildcards.flight)
     threads: lambda wildcards: 8 if _will_build_orthomosaic(wildcards) else 1
     resources:
         mem_mb=lambda wildcards: 262144 if _will_build_orthomosaic(wildcards) else 2048,
-        runtime=lambda wildcards: 2880 if _will_build_orthomosaic(wildcards) else 10
+        runtime=lambda wildcards: 2880 if _will_build_orthomosaic(wildcards) else 10,
+        # A GPU is only needed on the build branch. GPU flag must go in resources, not params:
+        slurm_extra=lambda wildcards: (
+            "--gpus=1" if _will_build_orthomosaic(wildcards) else ""
+        )
     shell:
         "bash create_ortho.sh {wildcards.site:q} {wildcards.year:q} {wildcards.flight:q} {params.working_dir:q} {params.scratch_dir:q} {params.raw_dir:q} > {log:q} 2>&1"
 
@@ -213,13 +216,12 @@ rule predict_birds:
     log:
         f"{working_dir}/logs/predict_birds/{{year}}/{{site}}/{{flight}}.log"
     conda: "envs/predict.yml"
-    params:
-        slurm_extra="--gpus=1"
     threads: 1
     resources:
         runtime=240,
         mem_mb=40000,
-        predict_birds_slot=1
+        predict_birds_slot=1,
+        slurm_extra="--gpus=1"
     shell:
         "python predict.py {input.projected} > {log} 2>&1"
 
