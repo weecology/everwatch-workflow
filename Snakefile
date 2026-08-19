@@ -125,7 +125,10 @@ rule create_orthomosaics:
         mem_mb=lambda wildcards: 262144 if _will_build_orthomosaic(wildcards) else 2048,
         runtime=lambda wildcards: 2880 if _will_build_orthomosaic(wildcards) else 10,
         # A GPU is only needed on the build branch.
-        gpu=lambda wildcards: 1 if _will_build_orthomosaic(wildcards) else 0
+        gpu=lambda wildcards: 1 if _will_build_orthomosaic(wildcards) else 0,
+        slurm_partition=lambda wildcards: (
+            "hpg-turin" if _will_build_orthomosaic(wildcards) else ""
+        )
     shell:
         "bash create_ortho.sh {wildcards.site:q} {wildcards.year:q} {wildcards.flight:q} {params.working_dir:q} {params.scratch_dir:q} {params.raw_dir:q} > {log:q} 2>&1"
 
@@ -219,7 +222,8 @@ rule predict_birds:
         runtime=240,
         mem_mb=40000,
         predict_birds_slot=1,
-        gpu=1
+        gpu=1,
+        slurm_partition="hpg-turin"
     shell:
         "python predict.py {input.projected} > {log} 2>&1"
 
