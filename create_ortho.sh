@@ -106,8 +106,9 @@ if ! apptainer run --nv --bind "${TARGET_DIR}:/project" \
 fi
 
 # Clean up images
-echo "Removing image folder ${TARGET_DIR}/code/images"
+echo "Removing image folder ${TARGET_DIR}/code/images and any submodel images"
 rm -rf "${TARGET_DIR}/code/images"
+rm -rf "${TARGET_DIR}/code/submodels"
 
 # Copy orthomosaic to the requested output path
 ODM_OUTPUT="${TARGET_DIR}/code/odm_orthophoto/odm_orthophoto.tif"
@@ -117,6 +118,6 @@ cp "${ODM_OUTPUT}" "${ARCHIVE_PATH}"
 ln -sfn "${ARCHIVE_PATH}" "${OUTPUT_PATH}"
 
 echo "Setting permissions on target folder"
-bash /home/veitchmichaelisj/bin/group-permissions-update.sh "${TARGET_DIR}"
+bash /home/veitchmichaelisj/bin/group-permissions-update.sh "${TARGET_DIR}" >&2
 
 echo "Completed processing ${FLIGHT}"
