@@ -81,7 +81,7 @@ echo "Running ODM on ${TARGET_DIR}"
 if ! apptainer run --nv --bind "${TARGET_DIR}:/project" \
     "$ODM_SIF" \
     --project-path /project \
-    --max-concurrency 4 \
+    --max-concurrency 8 \
     --orthophoto-resolution 1 \
     --optimize-disk-space \
     --rerun-all \
