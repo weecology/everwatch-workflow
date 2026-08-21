@@ -144,10 +144,10 @@ rule align_mosaics:
     params:
         align_dir=f"{working_dir}/orthomosaics_work/{{year}}/{{site}}/align/{{flight}}",
     conda: "envs/odm.yml"
-    threads: 12
+    threads: 32
     resources:
-        mem_mb=32000,
-        runtime=240
+        mem_mb=64000,
+        runtime=120
     shell:
         # These parameters have been tested to work reasonably well;
         # if you change the orthomosaccic resolution, you may need to
